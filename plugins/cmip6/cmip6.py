@@ -14,7 +14,7 @@ from netCDF4 import Dataset
 import os
 import toml
 from compliance_checker.base import BaseCheck, Result, TestCtx
-from plugins.wcrp_base import WCRPBaseCheck
+from plugins.base import WCRPBaseCheck
 from checks.consistency_checks.check_experiment_consistency import *
 from checks.variable_checks.check_variable_existence import check_variable_existence
 from checks.variable_checks.check_variable_shape_vs_dimensions import check_variable_shape

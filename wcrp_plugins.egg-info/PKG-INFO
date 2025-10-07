@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: wcrp_plugins
-Version: 0.0.1.dev1+g8bbaa051f.d20250930
+Version: 0.0.1.dev2+gf07c1f6e5.d20251001
 Summary: This IOO Compliance-Checker plugins checks compliance with WCRP Projects specifications 
 Author-email: Ayoub Nachite <anachite@ipsl.fr>, Martin Schupfner <schupfner@dkrz.de>, Javier Diez-Sierra <javier.diez@unican.es>, GHAZALI Iliana <liana.ghazali@meteo.fr>, Joakim Low <joakim.low@smhi.se>
 Maintainer-email: Ayoub Nachite <anachite@ipsl.fr>

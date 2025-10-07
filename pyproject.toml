@@ -13,7 +13,6 @@ authors = [
   { name = "Martin Schupfner", email = "schupfner@dkrz.de" },
   { name = "Javier Diez-Sierra", email = "javier.diez@unican.es" },
   { name = "GHAZALI Iliana", email = "liana.ghazali@meteo.fr" },
-  { name = "Joakim Low", email = "joakim.low@smhi.se" }
 ]
 maintainers = [{name = "Ayoub Nachite", email = "anachite@ipsl.fr"}]
 requires-python = ">=3.10"
@@ -30,7 +29,7 @@ dynamic = ["version"]
 [project.entry-points."compliance_checker.suites"]
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
 
-# -- SECTION CORRIGÉE --
+
 [tool.setuptools_scm]
 fallback_version = "0.0.0"
 write_to = "plugins/_version.py"

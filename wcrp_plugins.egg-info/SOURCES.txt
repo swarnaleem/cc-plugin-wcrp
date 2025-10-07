@@ -43,8 +43,13 @@ ci/requirements/environment.yml
 plugins/__init__.py
 plugins/_version.py
 plugins/wcrp_base.py
+plugins/__pycache__/__init__.cpython-312.pyc
+plugins/__pycache__/_version.cpython-312.pyc
+plugins/__pycache__/wcrp_base.cpython-312.pyc
 plugins/cmip6/__init__.py
 plugins/cmip6/cmip6.py
+plugins/cmip6/__pycache__/__init__.cpython-312.pyc
+plugins/cmip6/__pycache__/cmip6.cpython-312.pyc
 plugins/cmip6/resources/mapping_variables.toml
 plugins/cmip6/resources/wcrp_config.toml
 tests/__init__.py
