@@ -13,6 +13,10 @@
 from netCDF4 import Dataset
 import os
 import toml
+import json
+import re
+import cftime
+from datetime import timedelta
 from compliance_checker.base import BaseCheck, Result, TestCtx
 from plugins.base import WCRPBaseCheck
 from checks.consistency_checks.check_experiment_consistency import *
@@ -94,7 +98,7 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
         except Exception as e:
             print(f"Error while loading variable mapping: {e}")
             self.variable_mapping = {}
-    
+        self._write_consistency_output()
     def check_Drs_Vocabulary(self, ds):
         
         """
