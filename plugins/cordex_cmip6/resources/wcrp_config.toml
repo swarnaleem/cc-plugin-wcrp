@@ -1,7 +1,7 @@
 # ==============================================================================
 # ESGF-QC CMIP6 Configuration FILE 
 # ==============================================================================
-project_name = "wcrp_cordex-cmip6"
+project_name = "cordex-cmip6"
 project_version = "1.0"
 
 #------------------------------------------------------------------------------
@@ -13,6 +13,71 @@ expected_format = "HDF5"
 expected_data_model = "NETCDF4_CLASSIC"
 #expected_data_model = "NETCDF4"
 
+[format_checks.check_compression]
+severity = "M"
+expected_complevel = 1 
+expected_shuffle = true
+
+#------------------------------------------------------------------------------
+# Coordinate / Variable Checks
+# -----------------------------------------------------------------------------
+[variable_checks.check_coord_data_types]
+severity = "H"
+ctype = "double"
+auxtype = "real"
+
+[variable_checks.check_var_data_type]
+severity = "H"
+vartype = "real"
+var="main"
+
+[variable_checks.check_lat_lon_bounds]
+severity = "M"
+
+[variable_checks.check_horizontal_axes_bounds]
+severity = "M"
+
+[variable_checks.check_lon_value_range]
+severity = "H"
+
+#------------------------------------------------------------------------------
+# CORDEX-CMIP6 specific checks
+# -----------------------------------------------------------------------------
+[time_checks.check_time_chunking_cordex]
+severity = "M"
+
+[time_checks.check_time_range_cordex]
+severity = "H"
+
+[time_checks.check_calendar_cordex]
+severity = "M"
+
+[time_checks.check_time_units_cordex]
+severity = "H"
+
+[attribute_checks.check_grid_mapping]
+severity = "H"
+
+[attribute_checks.check_domain_id]
+severity = "H"
+
+[attribute_checks.check_institution]
+severity = "H"
+
+[attribute_checks.check_references]
+severity = "M"
+
+[attribute_checks.check_version_realization]
+severity = "H"
+
+[attribute_checks.check_version_realization_info]
+severity = "M"
+
+[attribute_checks.check_grid]
+severity = "M"
+
+[attribute_checks.check_driving_attributes]
+severity = "H"
 
 #------------------------------------------------------------------------------
 # DRS Checks
