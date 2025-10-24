@@ -42,8 +42,11 @@ except ImportError:
 
 
 class Cmip6ProjectCheck(WCRPBaseCheck):
-    
-    _cc_spec = "plugin_cmip6"
+    """
+    Class for WCRP CMIP6 project-specific compliance checks.
+    """
+
+    _cc_spec = "wcrp_cmip6"
     _cc_spec_version = "1.0"
     _cc_description = "WCRP Project Checks"
     supported_ds = [Dataset]
