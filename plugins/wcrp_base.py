@@ -59,6 +59,7 @@ class WCRPBaseCheck(BaseCheck):
 
     def __init__(self, options=None):
         super().__init__(options)
+        self.debug = options.get("debug", False) if options else False
         self.config = None
         self.project_config_path = None  # To be set by the specific WCRP plugin class
 
