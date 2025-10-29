@@ -1,2 +1,3 @@
 [compliance_checker.suites]
+plugin_cc6 = plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck
 plugin_cmip6 = plugins.cmip6.cmip6:Cmip6ProjectCheck

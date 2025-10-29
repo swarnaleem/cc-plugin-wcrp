@@ -1,8 +1,8 @@
 Metadata-Version: 2.4
 Name: wcrp_plugins
-Version: 0.1.1.dev0+ga22919684.d20251023
+Version: 0.1.1.dev2+g3ea5679f5.d20251028
 Summary: This IOO Compliance-Checker plugins checks compliance with WCRP Projects specifications 
-Author-email: Ayoub Nachite <anachite@ipsl.fr>, Martin Schupfner <schupfner@dkrz.de>, Javier Diez-Sierra <javier.diez@unican.es>, GHAZALI Iliana <liana.ghazali@meteo.fr>
+Author-email: Ayoub Nachite <anachite@ipsl.fr>, Martin Schupfner <schupfner@dkrz.de>, Javier Diez-Sierra <javier.diez@unican.es>, Rubén García Macho <rubengm@ifca.unican.es>, Adrian Chantreux <chantreux@ifca.unican.es>
 Maintainer-email: Ayoub Nachite <anachite@ipsl.fr>
 License:                                  Apache License
                                    Version 2.0, January 2004
@@ -206,18 +206,7 @@ License:                                  Apache License
            See the License for the specific language governing permissions and
            limitations under the License.
         
-Project-URL: Homepage, https://github.com/ESGF/cc-plugin-wcrp
-Project-URL: Bug Tracker, https://github.com/ESGF/cc-plugin-wcrp
 Keywords: compliance checker,plugin,wcrp,cmip6
-Classifier: Development Status :: 4 - Beta
-Classifier: Intended Audience :: Science/Research
-Classifier: License :: OSI Approved :: Apache Software License
-Classifier: Operating System :: OS Independent
-Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.10
-Classifier: Programming Language :: Python :: 3.11
-Classifier: Topic :: Scientific/Engineering
-Classifier: Topic :: System :: Archiving
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
@@ -227,6 +216,8 @@ Requires-Dist: xarray
 Requires-Dist: pandas
 Requires-Dist: cftime
 Requires-Dist: toml
+Requires-Dist: cf_xarray
+Requires-Dist: pooch
 Dynamic: license-file
 
 # WCRP  Compliance Checker Plugins

@@ -10,7 +10,7 @@ This [**IOOS/compliance-checker**](https://github.com/ioos/compliance-checker) p
 To install IOOS compliance-checker and the wcrp plugins :
 ```shell
 $ pip install compliance-checker 
-$ pip install wcrp-plugins
+$ pip install -e .
 ```
 See the [**IOOS/compliance-checker**](https://github.com/ioos/compliance-checker#installation) for additional Installation notes.
 
@@ -18,6 +18,7 @@ And then install Esgvoc and universe to get the Controlled Vocabulary :
 
 ```shell
 $ esgvoc config set universe:branch=esgvoc_dev
+$ esgvoc config add cordex-cmip6
 $ esgvoc install
 ```
 
@@ -30,7 +31,7 @@ This command displays the checkers already present on the iOS compliance checker
  ```shell
   ...
   - wcrp_cmip6 (x.x.x)
-  - wcrp_cordex (x.x.x)
+  - wcrp_cordex_cmip6 (x.x.x)
   ...
 ``` 
 To run the plugins on IOOS CC, use the following command:

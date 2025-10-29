@@ -4,3 +4,5 @@ xarray
 pandas
 cftime
 toml
+cf_xarray
+pooch
