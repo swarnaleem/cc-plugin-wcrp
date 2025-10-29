@@ -218,3 +218,95 @@ def retrieve(url, fname, path, force=False):
         path=path,
     )
     return filename
+
+
+def _compare_CV_element(el, val):
+    """Compares value of a CV entry to a given value."""
+    # ########################################################################################
+    # 5-6 Types of CV entries ('*' is the element that is the value for comparison):
+    # 0 # value
+    # 1 # key -> *list of values
+    # 2 # key -> *list of length 1 (regex)
+    # 3 # key -> *dict key -> value
+    # 4 # key -> *dict key -> dict key -> *value
+    # 5 # key -> *dict key -> dict key -> *list of values
+    # CMIP6 only and not considered here:
+    # 6 # key (source_id) -> *dict key -> dict key (license_info) -> dict key (id, license) -> value
+    # ########################################################################################
+    # 0 (2nd+ level comparison) #
+    if isinstance(el, str):
+        return (match_pattern_or_string(el, str(val)), [], [el])
+    # 1 and 2 #
+    elif isinstance(el, list):
+        return (any([match_pattern_or_string(eli, str(val)) for eli in el]), [], el)
+    # 3 to 6 #
+    elif isinstance(el, dict):
+        if val in el.keys():
+            # 3 #
+            if isinstance(el[val], str):
+                return True, [], []
+            # 4 to 6 #
+            elif isinstance(el[val], dict):
+                return True, list(el[val].keys()), []
+            else:
+                raise ValueError(
+                    f"Unknown CV structure for element: {el} and value {val}."
+                )
+        else:
+            return False, [], list(el.keys())
+    # (Yet) unknown
+    else:
+        raise ValueError(f"Unknown CV structure for element: {el} and value: {val}.")
+
+
+def _compare_CV(CheckerObject, dic2comp, errmsg_prefix):
+    """Compares dictionary of key-val pairs with CV."""
+    checked = {key: False for key in dic2comp.keys()}
+    messages = []
+    for attr in dic2comp.keys():
+        if attr in CheckerObject.CV:
+            errmsg = f"""{errmsg_prefix}'{attr}' does not comply with the CV: '{dic2comp[attr] if dic2comp[attr] else 'unset'}'."""
+            checked[attr] = True
+            test, attrs_lvl2, allowed_vals = _compare_CV_element(
+                CheckerObject.CV[attr], dic2comp[attr]
+            )
+            # If comparison fails
+            if not test:
+                if len(allowed_vals) == 1:
+                    errmsg += f""" Expected value/pattern: '{allowed_vals[0]}'."""
+                elif len(allowed_vals) > 3:
+                    errmsg += f""" Allowed values: {", ".join(f"'{av}'" for av in allowed_vals[0:3])}, ..."""
+                elif len(allowed_vals) > 1:
+                    errmsg += f""" Allowed values: {", ".join(f"'{av}'" for av in allowed_vals)}."""
+                messages.append(errmsg)
+            # If comparison could not be processed completely, as the CV element is another dictionary
+            else:
+                for attr_lvl2 in attrs_lvl2:
+                    if attr_lvl2 in dic2comp.keys():
+                        errmsg_lvl2 = f"""{errmsg_prefix}'{attr_lvl2}' does not comply with the CV: '{dic2comp[attr_lvl2] if dic2comp[attr_lvl2] else 'unset'}'."""
+                        checked[attr_lvl2] = True
+                        try:
+                            test, attrs_lvl3, allowed_vals = _compare_CV_element(
+                                CheckerObject.CV[attr][dic2comp[attr]][attr_lvl2],
+                                dic2comp[attr_lvl2],
+                            )
+                        except ValueError:
+                            raise ValueError(
+                                f"Unknown CV structure for element {attr} -> {CheckerObject.CV[attr][dic2comp[attr]][attr_lvl2]} / {attr_lvl2} -> {dic2comp[attr_lvl2]}."
+                            )
+                        if not test:
+                            if len(allowed_vals) == 1:
+                                errmsg_lvl2 += (
+                                    f""" Expected value/pattern: '{allowed_vals[0]}'."""
+                                )
+                            elif len(allowed_vals) > 3:
+                                errmsg_lvl2 += f""" Allowed values: {", ".join(f"'{av}'" for av in allowed_vals[0:3])}, ..."""
+                            elif len(allowed_vals) > 1:
+                                errmsg_lvl2 += f""" Allowed values: {", ".join(f"'{av}'" for av in allowed_vals)}."""
+                            messages.append(errmsg_lvl2)
+                        else:
+                            if len(attrs_lvl3) > 0:
+                                raise ValueError(
+                                    f"Unknown CV structure for element {attr} -> {dic2comp[attr]} -> {attr_lvl2}."
+                                )
+    return checked, messages

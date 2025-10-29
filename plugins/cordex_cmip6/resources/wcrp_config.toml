@@ -79,15 +79,31 @@ severity = "M"
 [attribute_checks.check_driving_attributes]
 severity = "H"
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # DRS Checks
 # ------------------------------------------------------------------------------
 
-[drs_checks]
-severity = "H"
+# ESGVOC: DRS checks with esgvoc currently not yet working for CORDEX-CMIP6
+#[drs_checks]
+#severity = "H"
+#[drs_consistency_checks]
+#severity = "H"
 
-[drs_consistency_checks]
+# Fallback: check against CORDEX-CMIP6_CV.json
+[drs_checks_cv]
+project_id = "CORDEX-CMIP6"
 severity = "H"
+drs_element_hard_checks = [
+    "domain_id",
+    "time_range",
+    "variable_id",
+    "version",
+    "version_realization",
+]
+
+# ------------------------------------------------------------------------------
+# Global Attribute Checks
+# ------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # Global Attributes to check 
@@ -100,15 +116,19 @@ severity = "H"
 #   - If 'constraint' HAS A VALUE (e.g., ".*@.*"): A regular expression pattern match is performed instead (ATTR005).
 #   - If 'constraint' is PRESENT but EMPTY (e.g., constraint = ""): All value checks (vocabulary and pattern) are DISABLED for that attribute.
 # ------------------------------------------------------------------------------
-
 [global_attributes.activity_id]
+severity = "H"
+expected_type = "str"
+
+[global_attributes.Conventions]
 severity = "H"
 expected_type = "str"
 
 [global_attributes.contact]
 severity = "H"
 expected_type = "str"
-constraint = ""
+#constraint = '^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|https?:\\/\\/[a-zA-Z0-9.-]+(?:\\/[^\s]*)?)$'
+constraint = '^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|https?://[a-zA-Z0-9.-]+(?:/[^\s]*)?)$'
 
 [global_attributes.creation_date]
 severity = "H"
@@ -134,10 +154,6 @@ expected_type = "str"
 severity = "H"
 expected_type = "str"
 
-[global_attributes.driving_institution]
-severity = "H"
-expected_type = "str"
-
 [global_attributes.driving_source_id]
 severity = "H"
 expected_type = "str"
@@ -152,6 +168,10 @@ expected_type = "str"
 
 [global_attributes.grid]
 severity = "H"
+expected_type = "str"
+
+[global_attributes.history]
+severity = "L"
 expected_type = "str"
 
 [global_attributes.institution_id]
@@ -178,6 +198,11 @@ expected_type = "str"
 severity = "H"
 expected_type = "str"
 
+[global_attributes.references]
+severity = "L"
+expected_type = "str"
+constraint = ""
+
 [global_attributes.source_id]
 severity = "H"
 expected_type = "str"
@@ -202,10 +227,33 @@ expected_type = "str"
 severity = "H"
 expected_type = "str"
 
+[global_attributes.version_realization_info]
+severity = "L"
+expected_type = "str"
+constraint = ""
+
+# ------------------------------------------------------------------------------
+# Global attributes to check
+# Fallback - check against CORDEX-CMIP6_CV.json
+# ------------------------------------------------------------------------------
+[required_global_attributes_checks_cv]
+severity = "H"
+global_attrs_hard_checks = [
+    "contact",
+    "creation_date",
+    "domain_id",
+    "grid",
+    "institution",
+    "time_range",
+    "variable_id",
+    "version",
+    "version_realization",
+]
+
 # ==============================================================================
 # == Checks Variable registry
 # ==============================================================================
-#To activate Variable regisrty checks
+#To activate Variable registry checks
 [variable_registry_checks]
 severity = "H"
 

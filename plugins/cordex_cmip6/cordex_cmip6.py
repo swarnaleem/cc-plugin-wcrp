@@ -15,6 +15,11 @@ import os
 
 import toml
 
+from checks.attribute_checks.check_attribute_cv import (
+    check_required_global_attributes_existence_cv,
+    check_required_global_attributes_value_cv,
+)
+from checks.attribute_checks.check_attribute_suite import check_attribute_suite
 from checks.attribute_checks.check_attrs_cordex_cmip6 import (
     check_domain_id,
     check_driving_attributes,
@@ -25,6 +30,12 @@ from checks.attribute_checks.check_attrs_cordex_cmip6 import (
     check_version_realization,
     check_version_realization_info,
 )
+from checks.consistency_checks.check_drs_filename_cv import (
+    check_drs_directory,
+    check_drs_directory_cv,
+    check_drs_filename,
+    check_drs_filename_cv,
+)
 from checks.format_checks.check_compression import check_compression
 from checks.format_checks.check_format import check_format
 from checks.time_checks.check_time_cordex_cmip6 import (
@@ -33,8 +44,6 @@ from checks.time_checks.check_time_cordex_cmip6 import (
     check_time_range,
     check_time_units,
 )
-
-# --- Import of checks and utils ---
 from checks.utils import retrieve
 from checks.variable_checks.check_coords_cordex_cmip6 import (
     check_horizontal_axes_bounds,
@@ -45,6 +54,8 @@ from checks.variable_checks.check_data_types import (
     check_coord_data_types,
     check_var_data_type,
 )
+
+# --- Import of checks and utils ---
 from plugins.wcrp_base import WCRPBaseCheck
 
 # --- Esgvoc universe import ---
@@ -452,4 +463,128 @@ class CordexCmip6ProjectCheck(WCRPBaseCheck):
                 )
             )
 
+        return results
+
+    def check_drs_esgvoc(self, ds):
+        """
+        [FILE001] DRS filename and directory path checks against CV pattern using ESGVOC.
+        """
+        results = []
+        if "drs_checks" not in self.config:
+            return results
+
+        config = self.config["drs_checks"]
+        severity = self.get_severity(config.get("severity"))
+
+        # Call filename CV check
+        results.extend(
+            check_drs_filename(ds=ds, severity=severity, project_id=self.project_name)
+        )
+
+        # Call Drs CV check
+        results.extend(
+            check_drs_directory(ds=ds, severity=severity, project_id=self.project_name)
+        )
+
+        return results
+
+    def check_drs_cv(self, ds):
+        """
+        [FILE001] DRS filename and directory path checks against CV pattern using <project>_CV.json.
+        """
+        results = []
+        if "drs_checks_cv" not in self.config:
+            return results
+
+        config = self.config["drs_checks_cv"]
+        severity = self.get_severity(config.get("severity"))
+        drs_elements_hard_checks = config.get("drs_element_hard_checks", [])
+        project_name = config.get("project_id", self.project_name)
+
+        # Call filename CV check
+        results.extend(
+            check_drs_filename_cv(
+                CheckerObject=self,
+                severity=severity,
+                project_id=project_name,
+                drs_elements_hard_checks=drs_elements_hard_checks,
+            )
+        )
+
+        # Call Drs CV check
+        results.extend(
+            check_drs_directory_cv(
+                CheckerObject=self,
+                severity=severity,
+                project_id=project_name,
+                drs_elements_hard_checks=drs_elements_hard_checks,
+            )
+        )
+
+        return results
+
+    def check_global_attributes(self, ds):
+        """[ATTR001-004] Orchestrates checks for both global and variable attributes defined via the TOML config."""
+
+        results = []
+        if not self.config:
+            return results
+
+        global_attrs_config = self.config.get("global_attributes", {})
+        for attr_name, attr_config in global_attrs_config.items():
+            results.extend(
+                check_attribute_suite(
+                    ds=ds,
+                    attribute_name=attr_name,
+                    severity=self.get_severity(attr_config.get("severity")),
+                    expected_type=attr_config.get("expected_type"),
+                    constraint=attr_config.get("constraint"),
+                    var_name=None,
+                    project_name=self.project_name,
+                )
+            )
+
+        variable_attrs_config = self.config.get("variable_attributes", {})
+        for var_name, attributes_to_check in variable_attrs_config.items():
+            for attr_name, attr_config in attributes_to_check.items():
+                results.extend(
+                    check_attribute_suite(
+                        ds=ds,
+                        attribute_name=attr_name,
+                        severity=self.get_severity(attr_config.get("severity")),
+                        expected_type=attr_config.get("expected_type"),
+                        constraint=attr_config.get("constraint"),
+                        var_name=var_name,
+                        project_name=self.project_name,
+                    )
+                )
+
+        return results
+
+    def check_global_attributes_cv(self, ds):
+        """[ATTR001/004] Checks existence and value of required global attributes against CORDEX-CMIP6_CV.json."""
+        results = []
+        if "required_global_attributes_checks_cv" not in self.config:
+            return results
+
+        config = self.config.get("required_global_attributes_checks_cv", {})
+
+        severity = self.get_severity(config.get("severity"))
+        global_attrs_hard_checks = config.get("global_attrs_hard_checks", [])
+
+        # Existence
+        results.extend(
+            check_required_global_attributes_existence_cv(
+                self,
+                severity=severity,
+            )
+        )
+        # Value
+        results.extend(
+            check_required_global_attributes_value_cv(
+                self,
+                severity=severity,
+                global_attrs_hard_checks=global_attrs_hard_checks,
+            )
+        )
         return results
