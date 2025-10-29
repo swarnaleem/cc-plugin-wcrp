@@ -5,7 +5,7 @@ import os
 
 from compliance_checker.base import BaseCheck, TestCtx
 
-from checks.utils import _compare_CV
+from checks.utils import _compare_CV, _find_drs_directory_and_filename
 
 try:
     from esgvoc.apps.drs.validator import DrsValidator
@@ -13,24 +13,6 @@ try:
     ESG_VOCAB_AVAILABLE = True
 except ImportError:
     ESG_VOCAB_AVAILABLE = False
-
-
-def _find_drs_directory(filepath, project_id="cmip6"):
-    """
-    Intelligently finds the DRS directory path by locating the project_id.
-    """
-    try:
-        path_parts = filepath.lower().split(os.sep)
-        original_parts = filepath.split(os.sep)
-        # Using last occurence of <project_id> as start index of DRS path
-        start_index = len(path_parts) - 1 - path_parts[::-1].index(project_id)
-        drs_directory = os.path.join(*original_parts[start_index:-1])
-        return drs_directory, None
-    except (ValueError, TypeError):
-        return (
-            None,
-            f"DRS project root '{project_id}' not found in the file path '{filepath}'.",
-        )
 
 
 # ==============================================================================
@@ -93,7 +75,7 @@ def check_drs_directory(ds, severity, project_id="cmip6"):
         ctx.add_failure("File path could not be determined.")
         return [ctx.to_result()]
 
-    drs_directory, error_msg = _find_drs_directory(filepath, project_id)
+    drs_directory, _, error_msg = _find_drs_directory_and_filename(filepath, project_id)
 
     if error_msg:
         ctx.add_failure(error_msg)

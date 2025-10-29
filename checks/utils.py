@@ -310,3 +310,93 @@ def _compare_CV(CheckerObject, dic2comp, errmsg_prefix):
                                     f"Unknown CV structure for element {attr} -> {dic2comp[attr]} -> {attr_lvl2}."
                                 )
     return checked, messages
+
+
+# === cc_plugin_cc6 utils and constants ===
+
+
+def _find_drs_directory_and_filename(filepath, project_id="cmip6"):
+    """
+    Intelligently finds the DRS directory path by locating the project_id.
+    """
+    try:
+        path_parts = os.path.dirname(filepath).lower().split(os.sep)
+        original_parts = os.path.dirname(filepath).split(os.sep)
+        # Using last occurence of <project_id> as start index of DRS path
+        start_index = len(path_parts) - 1 - path_parts[::-1].index(project_id.lower())
+        drs_directory = os.path.join(*original_parts[start_index:])
+        filename = os.path.basename(filepath)
+        return drs_directory, filename, None
+    except (ValueError, TypeError):
+        return (
+            None,
+            None,
+            f"DRS project root '{project_id}' not found in the file path '{filepath}'.",
+        )
+
+
+def _parse_filename_components(filename, filename_template_keys):
+    """
+    Parses filename to extract its components.
+    Returns a dictionary of the components or an error message.
+    """
+    # Remove the .nc extension and split by the underscore separator
+    filename_parts = filename.replace(".nc", "").split("_")
+
+    # If filename has fewer parts than expected, try to handle missing 'time_range'
+    if len(filename_parts) == len(filename_template_keys):
+        filename_facets = dict(zip(filename_template_keys, filename_parts))
+    elif len(filename_parts) == len(filename_template_keys) - 1:
+        # Set 'time_range' to 'UNSET' if missing
+        filename_facets = {}
+        part_idx = 0
+        for key in filename_template_keys:
+            if key == "time_range":
+                filename_facets[key] = "UNSET"
+            else:
+                filename_facets[key] = filename_parts[part_idx]
+                part_idx += 1
+    else:
+        return None, (
+            f"Filename '{filename}' does not have the expected {len(filename_template_keys)} "
+            f"components (or {len(filename_template_keys)-1} for time invariant variables)."
+        )
+
+    return filename_facets, None
+
+
+def _get_drs_facets(filepath, project_id, dir_template_keys, filename_template_keys):
+    """
+    Parses a full filepath to extract DRS components from both the directory path and the filename.
+    """
+    try:
+        drs_directory, filename, error_msg = _find_drs_directory_and_filename(
+            filepath, project_id
+        )
+        if error_msg:
+            return None, None, error_msg
+
+        # --- Directory handling ---
+        drs_path_parts = drs_directory.split(os.sep)
+        if len(drs_path_parts) != len(dir_template_keys):
+            return (
+                None,
+                None,
+                (
+                    f"Directory path does not match expected DRS depth. "
+                    f"Found {len(drs_path_parts)}, expected {len(dir_template_keys)}."
+                ),
+            )
+        dir_facets = dict(zip(dir_template_keys, drs_path_parts))
+
+        # --- Filename handling ---
+        filename_facets, error_msg = _parse_filename_components(
+            filename, filename_template_keys
+        )
+        if error_msg:
+            return None, None, error_msg
+
+        return dir_facets, filename_facets, None
+
+    except Exception as e:
+        return None, None, f"An unexpected error occurred during DRS parsing: {e}"

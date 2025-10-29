@@ -1,5 +1,5 @@
 # ==============================================================================
-# ESGF-QC CMIP6 Configuration FILE 
+# cc-plugin-wcrp CORDEX-CMIP6 Configuration FILE
 # ==============================================================================
 project_name = "cordex-cmip6"
 project_version = "1.0"
@@ -15,7 +15,7 @@ expected_data_model = "NETCDF4_CLASSIC"
 
 [format_checks.check_compression]
 severity = "M"
-expected_complevel = 1 
+expected_complevel = 1
 expected_shuffle = true
 
 #------------------------------------------------------------------------------
@@ -82,11 +82,10 @@ severity = "H"
 # ------------------------------------------------------------------------------
 # DRS Checks
 # ------------------------------------------------------------------------------
-
-# ESGVOC: DRS checks with esgvoc currently not yet working for CORDEX-CMIP6
+# ############
+#   NOTE:    DRS checks with esgvoc currently not yet working for CORDEX-CMIP6
+# ############
 #[drs_checks]
-#severity = "H"
-#[drs_consistency_checks]
 #severity = "H"
 
 # Fallback: check against CORDEX-CMIP6_CV.json
@@ -106,7 +105,7 @@ drs_element_hard_checks = [
 # ------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# Global Attributes to check 
+# Global Attributes to check
 # This section lists required  NetCDF global attributes for CORDEX-CMIP6 QC.
 # Each entry defines:
 #   - severity: "H" (High) (Mandatory) , "M" (Medium) (Warning), or "L" (Low) (Optional) priority
@@ -116,6 +115,9 @@ drs_element_hard_checks = [
 #   - If 'constraint' HAS A VALUE (e.g., ".*@.*"): A regular expression pattern match is performed instead (ATTR005).
 #   - If 'constraint' is PRESENT but EMPTY (e.g., constraint = ""): All value checks (vocabulary and pattern) are DISABLED for that attribute.
 # ------------------------------------------------------------------------------
+# ############
+#   NOTE:    Global Attribute Checks with esgvoc curerntly not yet fully operational for CORDEX-CMIP6
+# ############
 [global_attributes.activity_id]
 severity = "H"
 expected_type = "str"
@@ -127,7 +129,6 @@ expected_type = "str"
 [global_attributes.contact]
 severity = "H"
 expected_type = "str"
-#constraint = '^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|https?:\\/\\/[a-zA-Z0-9.-]+(?:\\/[^\s]*)?)$'
 constraint = '^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|https?://[a-zA-Z0-9.-]+(?:/[^\s]*)?)$'
 
 [global_attributes.creation_date]
@@ -253,22 +254,65 @@ global_attrs_hard_checks = [
 # ==============================================================================
 # == Checks Variable registry
 # ==============================================================================
-#To activate Variable registry checks
+# ############
+#   NOTE:    Variable registry checks with esgvoc currently not yet working for CORDEX-CMIP6
+# ############
 [variable_registry_checks]
 severity = "H"
 
 # ==============================================================================
 # == Consistency Checks
 # ==============================================================================
-
 [consistency_checks]
+  [consistency_checks.drs]
+  severity = "H"
+  dir_template_keys = [
+    "project_id",
+    "activity_id",
+    "domain_id",
+    "institution_id",
+    "driving_source_id",
+    "driving_experiment_id",
+    "driving_variant_label",
+    "source_id",
+    "version_realization",
+    "frequency",
+    "variable_id",
+    "version",
+  ]
+  filename_template_keys = [
+    "variable_id",
+    "domain_id",
+    "driving_source_id",
+    "driving_experiment_id",
+    "driving_variant_label",
+    "institution_id",
+    "source_id",
+    "version_realization",
+    "frequency",
+    "time_range",
+  ]
+
   [consistency_checks.variant_label]
   severity = "H"
   [consistency_checks.filename_vs_attributes]
   severity = "H"
+  filename_template_keys = [
+    "variable_id",
+    "domain_id",
+    "driving_source_id",
+    "driving_experiment_id",
+    "driving_variant_label",
+    "institution_id",
+    "source_id",
+    "version_realization",
+    "frequency",
+    "time_range",
+  ]
+
   [consistency_checks.experiment_details]
   severity = "H"
-  
+
   [consistency_checks.institution_details]
   severity = "H"
 
@@ -278,7 +322,6 @@ severity = "H"
 # Check frequency and table_id consistency via tha mapping below
 [freq_table_id_consistency_checks]
 severity = "H"
-
 
 # ==============================================================================
 # == Mappings for frequency/table_id Consistency Checks

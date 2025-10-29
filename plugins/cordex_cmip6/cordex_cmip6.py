@@ -30,6 +30,13 @@ from checks.attribute_checks.check_attrs_cordex_cmip6 import (
     check_version_realization,
     check_version_realization_info,
 )
+from checks.consistency_checks.check_attributes_match_filename import (
+    check_filename_vs_global_attrs,
+)
+from checks.consistency_checks.check_drs_consistency import (
+    check_attributes_match_directory_structure,
+    check_filename_matches_directory_structure,
+)
 from checks.consistency_checks.check_drs_filename_cv import (
     check_drs_directory,
     check_drs_directory_cv,
@@ -525,7 +532,6 @@ class CordexCmip6ProjectCheck(WCRPBaseCheck):
 
     def check_global_attributes(self, ds):
         """[ATTR001-004] Orchestrates checks for both global and variable attributes defined via the TOML config."""
-
         results = []
         if not self.config:
             return results
@@ -587,4 +593,66 @@ class CordexCmip6ProjectCheck(WCRPBaseCheck):
                 global_attrs_hard_checks=global_attrs_hard_checks,
             )
         )
+        return results
+
+    def check_consistency_drs(self, ds):
+        """
+        [PATH001/002] Checks consistency of DRS directory structure with filename and global attributes.
+        """
+        results = []
+        if "consistency_checks" not in self.config:
+            return results
+
+        config = self.config["consistency_checks"]
+
+        if "drs" in config:
+            severity = self.get_severity(config["drs"].get("severity"))
+            project_id = self.project_name
+            dir_template_keys = config["drs"].get("dir_template_keys")
+            filename_template_keys = config["drs"].get("filename_template_keys")
+
+            # Call check PATH001
+            results.extend(
+                check_attributes_match_directory_structure(
+                    ds=ds,
+                    severity=severity,
+                    project_id=project_id,
+                    dir_template_keys=dir_template_keys,
+                    filename_template_keys=filename_template_keys,
+                )
+            )
+
+            # Call check PATH002
+            results.extend(
+                check_filename_matches_directory_structure(
+                    ds=ds,
+                    severity=severity,
+                    project_id=project_id,
+                    dir_template_keys=dir_template_keys,
+                    filename_template_keys=filename_template_keys,
+                )
+            )
+
+        return results
+
+    def check_consistency_filename_from_config(self, ds):
+        """
+        [ATTR005] Checks consistency of filename and global attributes.
+        """
+        results = []
+        if "consistency_checks" not in self.config:
+            return results
+
+        config = self.config.get("consistency_checks", {})
+
+        if "filename_vs_attributes" in config:
+            check_config = config["filename_vs_attributes"]
+            results.extend(
+                check_filename_vs_global_attrs(
+                    ds=ds,
+                    severity=self.get_severity(check_config.get("severity")),
+                    filename_template_keys=check_config.get("filename_template_keys"),
+                )
+            )
+
         return results
