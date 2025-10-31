@@ -14,12 +14,12 @@ Modules included:
 - check_chunk_size_v141.py
 """
 
-from checks.data_plausibility_checks.check_nan_inf_v451 import check_nan_inf
-from checks.data_plausibility_checks.check_fill_missing_v453 import check_fillvalues_timeseries
-from checks.data_plausibility_checks.check_constant_v453 import check_constants
-from checks.data_plausibility_checks.detect_physically_impossible_outlier_v452 import check_outliers
-from checks.data_plausibility_checks.check_spatial_statistical_outliers_v454 import check_spatial_statistical_outliers
-from checks.data_plausibility_checks.check_chunk_size_v141 import check_chunk_size
+from checks.data_plausibility_checks.check_nan_inf import check_nan_inf
+from checks.data_plausibility_checks.check_fill_missing import check_fillvalues_timeseries
+from checks.data_plausibility_checks.check_constant import check_constants
+from checks.data_plausibility_checks.detect_physically_impossible_outlier import check_outliers
+from checks.data_plausibility_checks.check_spatial_statistical_outliers import check_spatial_statistical_outliers
+from checks.data_plausibility_checks.check_chunk_size import check_chunk_size
 __all__ = [
     "check_nan_inf",
     "check_fillvalues_timeseries",
