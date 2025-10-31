@@ -59,7 +59,6 @@ class WCRPBaseCheck(BaseCheck):
 
     def __init__(self, options=None):
         super().__init__(options)
-        self.debug = options.get("debug", False) if options else False
         self.config = None
         self.project_config_path = None  # To be set by the specific WCRP plugin class
 
@@ -189,16 +188,6 @@ class WCRPBaseCheck(BaseCheck):
             if self.consistency_output:
                 self._write_consistency_output()
 
-        # Specify the global attributes that will be checked by a specific check
-        #  rather than a general check against the value given in the CV
-        #  (i.e. because it is not explicitly defined in the CV)
-        self.global_attrs_hard_checks = [
-            "creation_date",
-            "time_range",
-            "variable_id",
-            "version",
-        ]
-
     def _load_project_config(self):
         """Loads the project-specific TOML configuration file using self.project_config_path."""
         if not self.project_config_path or not os.path.exists(self.project_config_path):
@@ -311,8 +300,6 @@ class WCRPBaseCheck(BaseCheck):
             if len(possible_ids) == 0:
                 possible_ids = [key for key in self.CT.keys() if self.frequency in key]
             if len(possible_ids) == 1:
-                if self.debug:
-                    print("Determined possible table_id = ", possible_ids[0])
                 self.table_id = possible_ids[0]
 
         self.cell_methods = self._get_var_attr("cell_methods", "unknown")
@@ -434,6 +421,7 @@ class WCRPBaseCheck(BaseCheck):
             required_attributes = getattr(self, "CV", {}).get(
                 "required_global_attributes", []
             )
+        # required_attributes = []
         # Retrieve via esgvoc
         if required_attributes == [] and ESG_VOCAB_AVAILABLE:
             print("Retrieving required attributes from ESGVOC")
