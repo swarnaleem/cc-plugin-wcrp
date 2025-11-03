@@ -9,8 +9,7 @@ This [**IOOS/compliance-checker**](https://github.com/ioos/compliance-checker) p
 ### Pip
 To install IOOS compliance-checker and the wcrp plugins :
 ```shell
-$ pip install compliance-checker 
-$ pip install -e .
+$ pip install cc-plugin-wcrp
 ```
 See the [**IOOS/compliance-checker**](https://github.com/ioos/compliance-checker#installation) for additional Installation notes.
 

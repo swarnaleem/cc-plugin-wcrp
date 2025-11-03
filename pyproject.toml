@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wcrp_plugins"
+name = "cc-plugin-wcrp"
 description = "This IOOS Compliance-Checker plugins checks compliance with WCRP Projects specifications "
 readme = "README.md"
 keywords = ["compliance checker", "plugin", "wcrp", "cmip6", "cordex_cmip6"]
@@ -38,6 +38,7 @@ plugin_cc6 = "plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck"
 [tool.setuptools_scm]
 fallback_version = "0.0.0"
 write_to = "plugins/_version.py"
+local_scheme = "no-local-version"
 
 [tool.setuptools.packages.find]
 include = ["plugins*", "checks*"]
