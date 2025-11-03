@@ -44,7 +44,7 @@ $ compliance-checker -t wcrp_cmip6:1.0  path/to/data/CMIP6/CMIP/IPSL/IPSL-CM5A2-
 
 By default, the output is in plain text, but you can specify other formats with the -f option :
 ```shell
-$ compliance-checker -t path/to/data/file.nc -f json
-$ compliance-checker -t path/to/data/file.nc -f html
+$ compliance-checker -t ''plugin'' path/to/data/file.nc -f json
+$ compliance-checker -t ''plugin'' path/to/data/file.nc -f html
 ``` 
 
