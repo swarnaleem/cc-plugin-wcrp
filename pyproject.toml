@@ -34,7 +34,6 @@ dynamic = ["version"]
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
 plugin_cc6 = "plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck"
 
-
 [tool.setuptools_scm]
 fallback_version = "0.0.0"
 write_to = "plugins/_version.py"
