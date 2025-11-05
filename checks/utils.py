@@ -140,6 +140,23 @@ def to_str(val):
     return str(val)
 
 
+def sanitize(obj):
+    """
+    Make sure all values are json-serializable.
+    """
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, (np.ndarray,)):
+        return obj.tolist()
+    return obj
+
+
 def printtimedelta(d):
     """Return timedelta (s) as either min, hours, days, whatever fits best."""
     if d > 86000:
@@ -312,7 +329,7 @@ def _compare_CV(CheckerObject, dic2comp, errmsg_prefix):
     return checked, messages
 
 
-# === cc_plugin_cc6 utils and constants ===
+# === Further utils ===
 
 
 def _find_drs_directory_and_filename(filepath, project_id="cmip6"):

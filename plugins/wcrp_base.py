@@ -15,7 +15,7 @@ import xarray as xr
 from compliance_checker.base import BaseCheck
 from netCDF4 import Dataset
 
-from checks.utils import deltdic, flatten
+from checks.utils import deltdic, flatten, sanitize
 
 # --- Esgvoc universe import ---
 try:
@@ -508,17 +508,19 @@ class WCRPBaseCheck(BaseCheck):
         # Write combined dictionary
         with open(self.consistency_output, "w") as f:
             json.dump(
-                {
-                    "global_attributes": file_attrs_req,
-                    "global_attributes_non_required": file_attrs_nreq,
-                    "global_attributes_dtypes": file_attrs_dtypes,
-                    "variable_attributes": var_attrs,
-                    "variable_attributes_dtypes": var_attrs_dtypes,
-                    "variable_dtypes": var_dtypes,
-                    "dimensions": dims,
-                    "coordinates": coord_checksums,
-                    "time_info": time_info,
-                },
+                sanitize(
+                    {
+                        "global_attributes": file_attrs_req,
+                        "global_attributes_non_required": file_attrs_nreq,
+                        "global_attributes_dtypes": file_attrs_dtypes,
+                        "variable_attributes": var_attrs,
+                        "variable_attributes_dtypes": var_attrs_dtypes,
+                        "variable_dtypes": var_dtypes,
+                        "dimensions": dims,
+                        "coordinates": coord_checksums,
+                        "time_info": time_info,
+                    }
+                ),
                 f,
                 indent=4,
             )
