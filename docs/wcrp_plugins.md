@@ -1,8 +1,9 @@
-# The `WCRP` Plugins
+# WCRP Plugins
 
 The **WCRP plugins** provide project-specific compliance checks for WCRP datasets such as **CMIP6** and **CORDEX-CMIP6**, built on top of the [IOOS Compliance Checker](https://ioos.github.io/compliance-checker/).
 
-Each plugin has its own orchestration layer (`wcrp_project.py`), which acts as the **controller** for WCRP validation logic — deciding:
+Each plugin has its own orchestration layer (`wcrp_project.py`), which acts as the **controller** for WCRP validation logic deciding:
+
 - Which checks to run  
 - With what severity  
 - According to each project’s configuration  
@@ -24,14 +25,16 @@ Each plugin has its own **TOML configuration file** defining specific rules, sev
 
 Each WCRP plugin:
 
-1. **Loads its configuration file** (`wcrp_cmip6.toml` or `wcrp_cordex_cmip6.toml`), which defines:
-   - Which checks to run (DRS, attributes, time, metadata, etc.)
-   - The severity of each check (High = Mandatory, Medium = Recommended, Low = Warning)
+**Loads its configuration file** (`wcrp_cmip6.toml` or `wcrp_cordex_cmip6.toml`), which defines:
 
-2. **Runs the atomic checks** implemented in `checks/…`:
-   - Examples: dimension existence/size, variable shape, time bounds, filename/DRS consistency, physical plausibility, missing values, etc.
+ - Which checks to run (DRS, attributes, time, metadata, etc.)
+ - The severity of each check (High = Mandatory, Medium = Recommended, Low = Warning)
 
-3. **Aggregates results** and returns them to the Compliance Checker core,  
+**Runs the atomic checks** implemented in `checks/…`:
+  
+ - Examples: dimension existence/size, variable shape, time bounds, filename/DRS consistency, physical plausibility, missing values, etc.
+
+**Aggregates results** and returns them to the Compliance Checker core,  
    which formats them into human-readable or machine-readable outputs (text, HTML, JSON).
 
 ---

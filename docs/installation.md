@@ -14,8 +14,9 @@ The **cc-plugin-wcrp**  provides plugins that call automated **quality and consi
 | **Configuration** | `wcrp_config.toml` | Defines active checks, thresholds, and DRS rules |
 
 ## 🧩 Requirements
-- **Python** ≥ 3.10  
-- **Dependencies** (installed automatically):
+**Python** ≥ 3.10  
+**Dependencies** (installed automatically):
+
   - `netCDF4`
   - `xarray`
   - `cfchecker`

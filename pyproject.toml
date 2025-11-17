@@ -33,6 +33,7 @@ dynamic = ["version"]
 [project.entry-points."compliance_checker.suites"]
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
 plugin_cc6 = "plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck"
+plugin_cmip7 = "plugins.cmip7.cmip7:Cmip7ProjectCheck"
 
 [tool.setuptools_scm]
 fallback_version = "0.0.0"

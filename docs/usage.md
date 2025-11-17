@@ -13,17 +13,17 @@ compliance-checker  -t wcrp_cmip6:1.0  path/to/data/CMIP6/CMIP/IPSL/IPSL-CM5A2-I
 ⚠️ **CF plugin**: Always run the CF checks as well when running the WCRP project checks, to ensure that CF-only checks (not duplicated in WCRP projects) are also verified.
 
 
-## Run several checks
+## 🚀 Run several checks
 ```bash
 compliance-checker   -t cf:1.11 -t wcrp_cmip6:1.0 path/to/data/CMIP6/CMIP/IPSL/IPSL-CM5A2-INCA/historical/r1i1p1f1/Amon/pr/gr/v20240619/pr_Amon_IPSL-CM5A2-INCA_historical_r1i1p1f1_gr_185001-201412.nc
 ```
 
-## Save output to a file
+## 🚀 Save output to a file
 ```bash
 compliance-checker -t wcrp_cmip6:1.0 file.nc -f text(json/html) -o qc.txt(json/html)   
 ```
 
-## Skip / Include Specific WCRP_Project Checks
+## 🚀 Skip / Include Specific WCRP_Project Checks
 
 - Only use check names from the wcrp_project (wcrp_cmip6 for example) suite here.
 
@@ -42,7 +42,7 @@ To **list all available checks**
 compliance-checker -l 
 ```
 
-## Multiple files
+## 🚀 Run Multiple files
 
 - Use shell wildcards/globs, and use **json_new** if you want one detailed JSON for all files:
 ```bash
