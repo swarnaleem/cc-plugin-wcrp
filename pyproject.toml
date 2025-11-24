@@ -34,6 +34,6 @@ version = "1.0.2"
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
 plugin_cc6 = "plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck"
 plugin_cmip7 = "plugins.cmip7.cmip7:Cmip7ProjectCheck"
-plugin_data = "plugins.data_plausibility.data_plugin:DatapluginProjectCheck"
+plugin_data = "plugins.data_plausibility.wcrp_data:DatapluginProjectCheck"
 [tool.setuptools.packages.find]
 include = ["plugins*", "checks*"]
