@@ -28,7 +28,7 @@ dependencies = [
   "esgvoc",
   "pooch"
 ]
-version = "1.0.2"
+version = "1.0.3"
 
 [project.entry-points."compliance_checker.suites"]
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
