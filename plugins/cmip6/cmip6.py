@@ -3,12 +3,10 @@
 
 # =============================================================================
 # WCRP CMIP6 project
-#
-# This module defines a WCRP example compliance checker, which serves as 
-# the main entry point for executing a series of validation checks on 
-# climate data. It relies on configuration defined in a TOML file and 
-# calls a suite of checks developed for quality control
-
+# This module defines the WCRP CMIP6 compliance checker, which serves as
+# the main entry point for executing a series of validation checks on
+# climate data submitted to the CMIP6 Archive.
+# It relies on configuration defined in a TOML file.
 # =============================================================================
 from netCDF4 import Dataset
 import os
@@ -530,84 +528,4 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
 
         return results
 
-    def check_Data_Plausibility(self, ds):
-        """
-        Runs all DATAxxx plausibility checks on CMIP6 variables.
-        Each check produces a Result with its own DATA00X identifier.
-        """
-        results = []
-
-        # Load configuration section
-        if "data_plausibility_checks" not in self.config:
-            return results
-
-        config = self.config["data_plausibility_checks"]
-        variable_id = getattr(ds, "variable_id", None)
-
-        # Retrieve the project name defined in TOML (default “CMIP”)
-        project = self.config.get("data_plausibility_checks", {}).get("project", "CMIP")
-
-
-        # === DATA001: NaN / Inf check ===
-        if config.get("check_nan_inf", {}).get("enabled", False):
-            ctx = check_nan_inf(
-                dataset=ds,
-                variable=variable_id,
-                parameter="NaN",
-                severity=self.get_severity(config["check_nan_inf"].get("severity"))
-            )
-            ctx.description = f"[DATA001] Check for NaN/Inf values in variable '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA002: Fill / Missing value check ===
-        if config.get("check_fill_missing", {}).get("enabled", False):
-            ctx = check_fillvalues_timeseries(
-                dataset=ds,
-                variable=variable_id,
-                severity=self.get_severity(config["check_fill_missing"].get("severity"))
-            )
-            ctx.description = f"[DATA002] FillValue/MissingValue plausibility for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA003: Constant value check ===
-        if config.get("check_constant", {}).get("enabled", False):
-            ctx = check_constants(
-                dataset=ds,
-                variable=variable_id,
-                severity=self.get_severity(config["check_constant"].get("severity"))
-            )
-            ctx.description = f"[DATA003] Constant field detection for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA004: Physically impossible outlier check ===
-        if config.get("check_physically_impossible_outlier", {}).get("enabled", False):
-            ctx = check_outliers(
-                dataset=ds,
-                thresholds_file='outliers_thresholds.json',
-                severity=self.get_severity(config["check_physically_impossible_outlier"].get("severity"))
-            )
-            ctx.description = f"[DATA004] Physically impossible outlier detection for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA005: Spatial statistical outlier check ===
-        if config.get("check_spatial_statistical_outliers", {}).get("enabled", False):
-            ctx = check_spatial_statistical_outliers(
-                dataset=ds,
-                variable=variable_id,
-                severity=self.get_severity(config["check_spatial_statistical_outliers"].get("severity")),
-                threshold=config["check_spatial_statistical_outliers"].get("threshold", 5),
-                parameter=config["check_spatial_statistical_outliers"].get("method", "Z-Score")
-            )
-            ctx.description = f"[DATA005] Spatial statistical outlier ({ctx.description}) check for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA006: Chunk size check ===
-        if config.get("check_chunk_size", {}).get("enabled", False):
-            ctx = check_chunk_size(
-                dataset=ds,
-                severity=self.get_severity(config["check_chunk_size"].get("severity"))
-            )
-            ctx.description = "[DATA006] Chunk size compliance check for 'time' and 'time_bnds'"
-            results.append(ctx.to_result())
-
-        return results
+   

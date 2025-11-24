@@ -192,38 +192,6 @@ constraint = " "
 #To activate Variable regisrty checks
 [variable_registry_checks]
 severity = "H"
-# ==============================================================================
-# == Data Plausibility Checks
-# ==============================================================================
-[data_plausibility_checks]
-# Project name (must match the “projects” key in your outliers_thresholds.json)
-project = "CMIP"
-
-[data_plausibility_checks.check_nan_inf]
-enabled = true
-severity = "H"
-
-[data_plausibility_checks.check_fill_missing]
-enabled = true
-severity = "M"
-
-[data_plausibility_checks.check_constant]
-enabled = true
-severity = "M"
-
-[data_plausibility_checks.check_physically_impossible_outlier]
-enabled = true
-severity = "H"
-
-[data_plausibility_checks.check_spatial_statistical_outliers]
-enabled = true
-severity = "M"
-threshold = 5
-method = "Z-Score"
-
-[data_plausibility_checks.check_chunk_size]
-enabled = true
-severity = "M"
 
 
 # ==============================================================================

@@ -28,17 +28,12 @@ dependencies = [
   "esgvoc",
   "pooch"
 ]
-dynamic = ["version"]
+version = "1.0.2"
 
 [project.entry-points."compliance_checker.suites"]
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
 plugin_cc6 = "plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck"
 plugin_cmip7 = "plugins.cmip7.cmip7:Cmip7ProjectCheck"
-
-[tool.setuptools_scm]
-fallback_version = "0.0.0"
-write_to = "plugins/_version.py"
-local_scheme = "no-local-version"
-
+plugin_data = "plugins.data_plausibility.data_plugin:DatapluginProjectCheck"
 [tool.setuptools.packages.find]
 include = ["plugins*", "checks*"]
