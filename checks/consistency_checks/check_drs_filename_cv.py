@@ -144,7 +144,7 @@ def check_drs_filename_cv(
         testctx.add_pass()
     else:
         testctx.add_failure(
-            f"""DRS filename building blocks could not be checked: {', '.join(f"'{ukey}'" for ukey in sorted(unchecked))}."""
+            f"""DRS filename building blocks could not be checked: {", ".join(f"'{ukey}'" for ukey in sorted(unchecked))}."""
         )
     return [testctx.to_result()]
 
@@ -184,7 +184,7 @@ def check_drs_directory_cv(
         testctx.add_pass()
     else:
         testctx.add_failure(
-            f"""DRS path building blocks could not be checked: {', '.join(f"'{ukey}'" for ukey in sorted(unchecked))}."""
+            f"""DRS path building blocks could not be checked: {", ".join(f"'{ukey}'" for ukey in sorted(unchecked))}."""
         )
 
     return [testctx.to_result()]

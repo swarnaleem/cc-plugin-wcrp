@@ -26,11 +26,13 @@ dependencies = [
   "toml",
   "cf_xarray",
   "esgvoc",
-  "pooch"
+  "pooch",
+  "pydantic>=2.12.5",
 ]
 version = "1.0.3"
 
 [project.entry-points."compliance_checker.suites"]
+
 plugin_cmip6 = "plugins.cmip6.cmip6:Cmip6ProjectCheck"
 plugin_cc6 = "plugins.cordex_cmip6.cordex_cmip6:CordexCmip6ProjectCheck"
 plugin_cmip7 = "plugins.cmip7.cmip7:Cmip7ProjectCheck"

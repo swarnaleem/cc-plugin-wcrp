@@ -1,193 +1,284 @@
 #!/usr/bin/env python
-
 # =============================================================================
 # WCRP CMIP7 project
-#
-# This module defines a WCRP example compliance checker for CMIP7, which serves as
-# the main entry point for executing a series of validation checks on
-# climate data. It relies on configuration defined in a TOML file and
-# calls a suite of checks developed for quality control
-
 # =============================================================================
-from netCDF4 import Dataset
-import toml
-from plugins.wcrp_base import WCRPBaseCheck
-from checks.consistency_checks.check_experiment_consistency import *
-from checks.variable_checks.check_variable_existence import check_variable_existence
-from checks.variable_checks.check_variable_shape_vs_dimensions import check_variable_shape
-from checks.variable_checks.check_bounds_value_consistency import check_bounds_value_consistency
-from checks.consistency_checks.check_drs_filename_cv import *
-from checks.consistency_checks.check_institution_source_consistency import *
-from checks.attribute_checks.check_attribute_suite import check_attribute_suite
-from checks.dimension_checks.check_dimension_positive import check_dimension_positive
-from checks.dimension_checks.check_dimension_existence import check_dimension_existence
-from checks.dimension_checks.check_dimension_size import *
-from checks.consistency_checks.check_variant_label_consistency import check_variant_label_consistency
-from checks.consistency_checks.check_frequency_table_consistency import check_frequency_table_id_consistency
-from checks.consistency_checks.check_drs_consistency import check_attributes_match_directory_structure, \
-    check_filename_matches_directory_structure
-from checks.consistency_checks.check_attributes_match_filename import check_filename_vs_global_attrs, \
-    _parse_filename_components
-from checks.time_checks.check_time_bounds import check_time_bounds
-from checks.time_checks.check_time_range_vs_filename import *
-from checks.data_plausibility_checks.check_nan_inf import check_nan_inf
-from checks.data_plausibility_checks.check_fill_missing import check_fillvalues_timeseries
-from checks.data_plausibility_checks.check_constant import check_constants
-from checks.data_plausibility_checks.detect_physically_impossible_outlier import check_outliers
-from checks.data_plausibility_checks.check_spatial_statistical_outliers import check_spatial_statistical_outliers
-from checks.data_plausibility_checks.check_chunk_size import check_chunk_size
 
-# --- Esgvoc universe import---
+from __future__ import annotations
+
+import os
+import re
+from typing import Dict, Optional, List, Literal, Any, Tuple
+
+import toml
+from netCDF4 import Dataset
+from pydantic import BaseModel, Field, model_validator
+
+from compliance_checker.base import BaseCheck, TestCtx
+from plugins.wcrp_base import WCRPBaseCheck
+from checks.attribute_checks.check_attribute_suite import check_attribute_suite
+from checks.variable_checks.check_variable_existence import check_variable_existence
+from checks.time_checks.check_time_calendar import check_calendar_cmip7
+from checks.variable_checks.check_variable_type import check_variable_type
+from checks.dimension_checks.check_dimension_existence import check_dimension_existence
+from checks.dimension_checks.check_dimension_positive import check_dimension_positive
+from checks.dimension_checks.check_dimension_size import (
+    check_dimension_size_is_equals_to,
+)
+from checks.variable_checks.check_bounds_value_consistency import (
+    check_bounds_value_consistency,
+)
+
+from checks.consistency_checks.check_drs_filename_cv import (
+    check_drs_filename,
+    check_drs_directory,
+)
+from checks.consistency_checks.check_drs_consistency import (
+    check_attributes_match_directory_structure,
+    check_filename_matches_directory_structure,
+)
+from checks.consistency_checks.check_attributes_match_filename import (
+    check_filename_vs_global_attrs,
+)
+from checks.consistency_checks.check_experiment_consistency import (
+    check_experiment_consistency,
+)
+from checks.consistency_checks.check_institution_source_consistency import (
+    check_institution_consistency,
+    check_source_consistency,
+)
+from checks.format_checks.check_compression import check_compression
+from checks.format_checks.check_format import check_format
+from checks.time_checks.check_time_bounds import check_time_bounds
+from checks.time_checks.check_time_range_vs_filename import check_time_range_vs_filename
+from checks.time_checks.check_time_squareness import check_time_squareness
+
+# --- CF Checker helpers ---
 try:
-    from esgvoc.api.universe import find_terms_in_data_descriptor
+    from compliance_checker.cf.util import (
+        get_geophysical_variables,
+        get_coordinate_variables,
+        get_auxiliary_coordinate_variables,
+    )
+except ImportError as e:
+    raise ImportError("Unable to import utils from compliance_checker.cf.util.") from e
+
+# --- ESGVOC (Variable Registry) ---
+try:
+    from esgvoc import api as voc
 
     ESG_VOCAB_AVAILABLE = True
-except ImportError:
+except Exception:
     ESG_VOCAB_AVAILABLE = False
+
+try:
+    from esgvoc.api.universe import find_terms_in_data_descriptor
+except Exception:
+    find_terms_in_data_descriptor = None
+
+
+# =============================================================================
+# Pydantic models
+# =============================================================================
+
+Severity = Literal["H", "M", "L"]
+ValueType = Literal["str", "int", "float", "str_array"]
+
+
+class SimpleCheck(BaseModel):
+    severity: Severity
+
+
+class AttributeRule(BaseModel):
+    severity: Severity
+    value_type: ValueType
+    is_required: bool = True
+    attribute_name: Optional[str] = None
+    constraint: Optional[str] = None
+    cv_source_collection: Optional[str] = None
+    cv_source_collection_key: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _exclusive_rules(self):
+        if self.constraint and self.cv_source_collection:
+            raise ValueError(
+                "constraint and cv_source_collection are mutually exclusive"
+            )
+        return self
+
+
+class FileFormatRule(BaseModel):
+    severity: Severity
+    expected_format: str
+    expected_data_model: str
+
+
+class FileCompressionRule(BaseModel):
+    severity: Severity
+    expected_complevel: int
+    expected_shuffle: bool
+
+
+class FileChecks(BaseModel):
+    format: Optional[FileFormatRule] = None
+    compression: Optional[FileCompressionRule] = None
+
+
+class DrsChecks(BaseModel):
+    filename: Optional[SimpleCheck] = None
+    directory: Optional[SimpleCheck] = None
+    consistency: Optional[SimpleCheck] = None
+
+
+class TimeSquarenessRule(BaseModel):
+    severity: Severity
+    calendar: str = ""
+    ref_time_units: str = ""
+    frequency: Dict[str, str] = Field(default_factory=dict)
+
+
+class TimeSection(BaseModel):
+    squareness: Optional[TimeSquarenessRule] = None
+
+
+class ConsistencyChecks(BaseModel):
+    filename_vs_attributes: Optional[SimpleCheck] = None
+    experiment_details: Optional[SimpleCheck] = None
+    institution_details: Optional[SimpleCheck] = None
+    source_details: Optional[SimpleCheck] = None
+
+
+class VariableAttributesSection(BaseModel):
+    severity: Optional[Severity] = None
+    items: Dict[str, SimpleCheck] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _split_severity_and_items(cls, values):
+        if values is None or not isinstance(values, dict):
+            return values
+        sev = values.get("severity")
+        # Le validateur Pydantic range tout ce qui n'est pas "severity" dans "items"
+        # C'est ce qui permet d'écrire [variable.attributes.units] en TOML
+        items = {k: v for k, v in values.items() if k != "severity"}
+        return {"severity": sev, "items": items}
+
+
+class VariableSection(BaseModel):
+    existence: Optional[SimpleCheck] = None
+    type: Optional[SimpleCheck] = None
+    dimensions: Optional[SimpleCheck] = None
+    attributes: Optional[VariableAttributesSection] = None
+    shape_bounds: Optional[SimpleCheck] = None
+    bnds_vertices: Optional[SimpleCheck] = None
+    time_checks: Optional[SimpleCheck] = None
+
+
+class CoordinatesSection(BaseModel):
+    auxiliary: Optional[SimpleCheck] = None
+    bounds: Optional[SimpleCheck] = None
+    properties: Optional[SimpleCheck] = None
+    time: Optional[TimeSection] = None
+
+
+class CMIP7Config(BaseModel):
+    project_name: str
+    project_version: str
+    drs: Optional[DrsChecks] = None
+    file: Optional[FileChecks] = None
+    global_attributes: Dict[str, AttributeRule] = Field(default_factory=dict)
+    variable_attributes: Optional[Dict[str, Dict[str, AttributeRule]]] = None
+    variable: Optional[VariableSection] = None
+    coordinates: Optional[CoordinatesSection] = None
+    consistency_checks: Optional[ConsistencyChecks] = None
+
+
+# =============================================================================
+# CMIP7 Project Checker Implementation
+# =============================================================================
 
 
 class Cmip7ProjectCheck(WCRPBaseCheck):
-    """
-    Class for WCRP CMIP7 project-specific compliance checks.
-    """
     _cc_spec = "wcrp_cmip7"
     _cc_spec_version = "1.0"
-    _cc_description = "WCRP Project Checks"
+    _cc_description = "WCRP CMIP7 Project Checks"
     supported_ds = [Dataset]
 
     def __init__(self, options=None):
         super().__init__(options)
-        if options and 'project_config_path' in options:
-            self.project_config_path = options['project_config_path']
+        self.project_name = "cmip7"
+        self.config: Optional[CMIP7Config] = None
+        self._geo_var_cache = None
+        self._vr_expected_cache = None
+        self._vr_expected_dims_cache = None
+
+        if options and "project_config_path" in options:
+            self.project_config_path = options["project_config_path"]
         else:
             this_dir = os.path.dirname(os.path.abspath(__file__))
-            self.project_config_path = os.path.join(this_dir, "resources", "wcrp_config.toml")
-        # Define project name here for vocabulary checks
-        self.project_name = "cmip7"
-
-    def _load_project_config(self):
-        if not self.project_config_path or not os.path.exists(self.project_config_path):
-            print(f"Warning: Configuration file path not set or file not found at {self.project_config_path}")
-            self.config = {}
-            return
-        try:
-            with open(self.project_config_path, 'r', encoding="utf-8") as f:
-                self.config = toml.load(f)
-        except Exception as e:
-            self.config = {}
-            print(f"Error parsing TOML configuration from {self.project_config_path}: {e}")
+            self.project_config_path = os.path.join(
+                this_dir, "resources", "wcrp_cmip7_config.toml"
+            )
 
     def setup(self, ds):
         super().setup(ds)
         self._load_project_config()
-
-        base_dir = os.path.dirname(self.project_config_path)
-        mapping_filepath = os.path.join(base_dir, "mapping_variables.toml")
-
-        try:
-            with open(mapping_filepath, 'r') as f:
-                self.variable_mapping = toml.load(f).get('mapping_variables', {})
-        except FileNotFoundError:
-            print(f"Mapping file '{mapping_filepath}' not found.")
-            self.variable_mapping = {}
-        except Exception as e:
-            print(f"Error while loading variable mapping: {e}")
-            self.variable_mapping = {}
-
         if self.consistency_output:
             self._write_consistency_output()
+        self._geo_var_cache = None
+        self._vr_expected_cache = None
+        self._vr_expected_dims_cache = None
 
+    def _load_project_config(self):
+        if not os.path.exists(self.project_config_path):
+            raise RuntimeError(f"Config not found: {self.project_config_path}")
+        with open(self.project_config_path, "r", encoding="utf-8") as f:
+            self.config = CMIP7Config(**toml.load(f))
 
-    def check_Drs_Vocabulary(self, ds):
-        """
-        Runs the DRS filename and directory path checks separately against CV pattern
-        """
+    # --- Helpers ---
+    def _get_geo_var(self, ds, severity) -> Tuple[Optional[str], List[Any]]:
+        if self._geo_var_cache and self._geo_var_cache in ds.variables:
+            return self._geo_var_cache, []
         results = []
-        if "drs_checks" not in self.config:
-            return results
-
-        config = self.config["drs_checks"]
-        severity = self.get_severity(config.get("severity"))
-        project_id = "cmip7"
-
-        # Call filename CV check
-        results.extend(check_drs_filename(
-            ds=ds,
-            severity=severity,
-            project_id=project_id
-        ))
-
-        # Call Drs CV check
-        results.extend(check_drs_directory(
-            ds=ds,
-            severity=severity,
-            project_id=project_id
-        ))
-
-        return results
-
-
-    def check_Global_Variable_Attributes(self, ds):
-        # Orchestrates checks for both global and variable attributes from the TOML config#
-
-        results = []
-        if not self.config:
-            return results
-
-        global_attrs_config = self.config.get('global_attributes', {})
-        for attr_name, attr_config in global_attrs_config.items():
-            results.extend(check_attribute_suite(
-                ds=ds,
-                attribute_name=attr_name,
-                severity=self.get_severity(attr_config.get('severity')),
-                expected_type=attr_config.get('expected_type'),
-                constraint=attr_config.get('constraint'),
-                var_name=None,
-                project_name=self.project_name
-            ))
-
-        variable_attrs_config = self.config.get('variable_attributes', {})
-        for var_name, attributes_to_check in variable_attrs_config.items():
-            for attr_name, attr_config in attributes_to_check.items():
-                results.extend(check_attribute_suite(
-                    ds=ds,
-                    attribute_name=attr_name,
-                    severity=self.get_severity(attr_config.get('severity')),
-                    expected_type=attr_config.get('expected_type'),
-                    constraint=attr_config.get('constraint'),
-                    var_name=var_name,
-                    project_name=self.project_name
-                ))
-
-        return results
-
-
-    def check_Variable_Registry(self, ds):
-        results = []
-        if "variable_registry_checks" not in self.config:
-            return results
-
-        if not ESG_VOCAB_AVAILABLE:
-            ctx = TestCtx(BaseCheck.HIGH, "Variable Registry Discovery")
-            ctx.add_failure("The 'esgvoc' library is required but not installed.")
-            return [ctx.to_result()]
-
         try:
-            variable_id = ds.getncattr("variable_id")
-            table_id = ds.getncattr("table_id")
-        except AttributeError as e:
-            ctx = TestCtx(BaseCheck.HIGH, "Variable Registry Discovery")
-            ctx.add_failure(f"Missing required global attribute: {e}.")
-            return [ctx.to_result()]
+            geo_vars = list(get_geophysical_variables(ds))
+        except Exception as e:
+            ctx = TestCtx(severity, "Geophysical Variable Detection")
+            ctx.add_failure(f"Error detecting variables: {e}")
+            results.append(ctx.to_result())
+            return None, results
 
-        mapping_key = f"{table_id}.{variable_id}"
+        if len(geo_vars) != 1:
+            ctx = TestCtx(severity, "Geophysical Variable Detection")
+            ctx.add_failure(
+                f"Expected exactly 1 geophysical variable, found {len(geo_vars)}: {geo_vars}"
+            )
+            results.append(ctx.to_result())
+            return None, results
 
-        known_branded_variable = self.variable_mapping.get(mapping_key)
+        self._geo_var_cache = geo_vars[0]
+        return self._geo_var_cache, results
 
-        if not known_branded_variable:
-            ctx = TestCtx(BaseCheck.HIGH, "Variable Registry Discovery")
-            ctx.add_failure(f"No mapping found for '{mapping_key}'.")
-            return [ctx.to_result()]
+    def _get_expected_from_registry(self, ds, severity):
+        """
+         CMIP7 logic :
+        read directly the global attribute 'branded_variable'.
+        """
+        if self._vr_expected_cache is not None:
+            return self._vr_expected_cache, self._vr_expected_dims_cache, []
+
+        results = []
+
+        if not ESG_VOCAB_AVAILABLE or find_terms_in_data_descriptor is None:
+            return None, None, results
+        try:
+            branded = ds.getncattr("branded_variable")
+        except AttributeError:
+            ctx = TestCtx(severity, "Variable Registry")
+            ctx.add_failure(
+                "Missing global attribute 'branded_variable' required for CMIP7 VR lookup."
+            )
+            results.append(ctx.to_result())
+            return None, None, results
 
         fields_to_get = [
             "cf_standard_name",
@@ -195,396 +286,497 @@ class Cmip7ProjectCheck(WCRPBaseCheck):
             "dimensions",
             "cell_methods",
             "cell_measures",
-            "description"
+            "description",
+            "long_name",
         ]
 
-        terms = find_terms_in_data_descriptor(
-            expression=known_branded_variable,
-            data_descriptor_id="known_branded_variable",
-            only_id=True,
-            selected_term_fields=fields_to_get
-        )
+        expected = None
+        try:
+            terms = find_terms_in_data_descriptor(
+                expression=str(branded),
+                data_descriptor_id="known_branded_variable",
+                only_id=True,
+                selected_term_fields=fields_to_get,
+            )
+            if terms:
+                expected = terms[0]
+        except Exception as e:
+            ctx = TestCtx(severity, "Variable Registry")
+            ctx.add_failure(f"Error querying ESGVOC (find_terms) for '{branded}': {e}")
+            results.append(ctx.to_result())
+            return None, None, results
 
-        if not terms:
-            ctx = TestCtx(BaseCheck.HIGH, "Variable Registry Discovery")
-            ctx.add_failure(f"Could not retrieve vocabulary details for '{known_branded_variable}'.")
-            return [ctx.to_result()]
+        if not expected:
+            ctx = TestCtx(severity, "Variable Registry")
+            ctx.add_failure(f"Term '{branded}' not found in Variable Registry.")
+            results.append(ctx.to_result())
+            return None, None, results
 
-        expected = terms[0]
-
-        # === Step 2: Launch checks using discovered info ===
-        expected_dims = getattr(expected, 'dimensions', [])
-
-        if not isinstance(expected_dims, list) or not all(isinstance(d, str) for d in expected_dims):
-            print(f" Unexpected format for expected_dims: {expected_dims}")
+        # Extract dimensions
+        try:
+            expected_dims = getattr(expected, "dimensions", []) or []
+        except Exception:
             expected_dims = []
 
-        if expected_dims:
+        self._vr_expected_cache = expected
+        self._vr_expected_dims_cache = expected_dims
 
-            actual_dims = set(ds.dimensions.keys())
-            actual_vars = set(ds.variables.keys())
+        return expected, expected_dims, results
 
-            for expected_dim in sorted(expected_dims):
-                matched_dim = None
+    @staticmethod
+    def _fuzzy_match_dim(expected, actuals):
+        if expected in actuals:
+            return expected
+        for a in actuals:
+            if a in expected or expected in a:
+                return a
+        return None
 
-                # Try to find a matching real dimension
-                for actual_dim in actual_dims:
-                    if actual_dim in expected_dim or expected_dim in actual_dim:
-                        matched_dim = actual_dim
-                        break
+    # --- File Checks ---
+    def check_File_Format(self, ds):
+        if not self.config or not self.config.file or not self.config.file.format:
+            return []
+        r = self.config.file.format
+        return check_format(
+            ds, r.expected_format, r.expected_data_model, self.get_severity(r.severity)
+        )
 
-                if matched_dim:
-                    results.extend(check_dimension_existence(
-                        ds=ds,
-                        dimension_name=matched_dim,
-                        severity=self.get_severity("H")
-                    ))
-                    results.extend(check_dimension_positive(
-                        ds=ds,
-                        dimension_name=matched_dim,
-                        severity=self.get_severity("H")
-                    ))
-                    results.extend(check_variable_existence(
-                        ds=ds,
-                        var_name=matched_dim,
-                        severity=self.get_severity("H")
-                    ))
+    def check_File_Compression(self, ds):
+        if not self.config or not self.config.file or not self.config.file.compression:
+            return []
+        r = self.config.file.compression
+        return check_compression(
+            ds,
+            None,
+            r.expected_complevel,
+            r.expected_shuffle,
+            self.get_severity(r.severity),
+        )
 
-                else:
-                    # Special case: expected 'height2m' but actual variable is 'height'
-                    if expected_dim.lower().startswith("height") and "height" in actual_vars:
+    def check_Drs_Vocabulary(self, ds):
+        res = []
+        if self.config and self.config.drs:
+            if self.config.drs.filename:
+                res.extend(
+                    check_drs_filename(
+                        ds,
+                        self.get_severity(self.config.drs.filename.severity),
+                        self.project_name,
+                    )
+                )
+            if self.config.drs.directory:
+                res.extend(
+                    check_drs_directory(
+                        ds,
+                        self.get_severity(self.config.drs.directory.severity),
+                        self.project_name,
+                    )
+                )
+        return res
 
-                        results.extend(check_variable_existence(
+    # --- Attribute Checks ---
+    def check_Global_Variable_Attributes(self, ds):
+        res = []
+        if not self.config:
+            return res
+
+        for k, r in self.config.global_attributes.items():
+            res.extend(
+                check_attribute_suite(
+                    ds=ds,
+                    attribute_name=k,
+                    attribute_nc_name=r.attribute_name,
+                    severity=self.get_severity(r.severity),
+                    value_type=r.value_type,
+                    is_required=r.is_required,
+                    constraint=r.constraint,
+                    cv_collection=r.cv_source_collection,
+                    cv_collection_key=r.cv_source_collection_key,
+                    var_name=None,
+                    project_name=self.project_name,
+                )
+            )
+
+        if self.config.variable_attributes:
+            for v, attrs in self.config.variable_attributes.items():
+                for k, r in attrs.items():
+                    res.extend(
+                        check_attribute_suite(
                             ds=ds,
-                            var_name='height',
-                            severity=self.get_severity("H")
-                        ))
-                    else:
-                        # Final fallback: try the expected_dim as-is
-                        print(f"WARNING: No match found for '{expected_dim}', trying as-is")
-                        results.extend(check_dimension_existence(
+                            attribute_name=k,
+                            attribute_nc_name=r.attribute_name,
+                            severity=self.get_severity(r.severity),
+                            value_type=r.value_type,
+                            is_required=r.is_required,
+                            constraint=r.constraint,
+                            cv_collection=r.cv_source_collection,
+                            cv_collection_key=r.cv_source_collection_key,
+                            var_name=v,
+                            project_name=self.project_name,
+                        )
+                    )
+        return res
+
+    # --- Variable Checks ---
+    def check_variable_existence(self, ds):
+        res = []
+        if (
+            not self.config
+            or not self.config.variable
+            or not self.config.variable.existence
+        ):
+            return res
+        sev = self.get_severity(self.config.variable.existence.severity)
+        geo, r = self._get_geo_var(ds, sev)
+        res.extend(r)
+        if geo:
+            res.extend(check_variable_existence(ds, geo, sev))
+        return res
+
+    def check_variable_type(self, ds):
+        res = []
+        if not self.config or not self.config.variable or not self.config.variable.type:
+            return res
+        sev = self.get_severity(self.config.variable.type.severity)
+        geo, r = self._get_geo_var(ds, sev)
+        res.extend(r)
+        if geo:
+            res.extend(check_variable_type(ds, geo, allowed_types=["f"], severity=sev))
+        return res
+
+    def check_variable_dimensions(self, ds):
+        """
+        [variable.dimensions]
+        Checks existence of dimensions and compares with Variable Registry.
+        """
+        res = []
+        if (
+            not self.config
+            or not self.config.variable
+            or not self.config.variable.dimensions
+        ):
+            return res
+
+        sev = self.get_severity(self.config.variable.dimensions.severity)
+        geo, r = self._get_geo_var(ds, sev)
+        res.extend(r)
+        if not geo:
+            return res
+
+        # 1. Checks on actual dimensions
+        act = list(ds.variables[geo].dimensions)
+        for d in act:
+            res.extend(check_dimension_existence(ds, d, sev))
+            res.extend(check_dimension_positive(ds, d, sev))
+            res.extend(check_variable_existence(ds, d, sev))
+
+        # 2. Comparison with Variable Registry (VR)
+        exp, exp_dims, vr_r = self._get_expected_from_registry(ds, sev)
+        res.extend(vr_r)
+
+        if exp_dims:
+            # --- BLOCK VAR000: Count comparison ---
+            ctx_len = TestCtx(BaseCheck.MEDIUM, "[VAR000] Dimensions count vs VR")
+
+            if len(act) == len(exp_dims):
+                ctx_len.add_pass()
+            else:
+                ctx_len.add_failure(
+                    f"Variable '{geo}' has {len(act)} dims {act}, "
+                    f"but VR expects {len(exp_dims)} {exp_dims}. "
+                    "(Note: Scalar coordinates like 'height' are often counted in VR but absent from dims)"
+                )
+            res.append(ctx_len.to_result())
+
+            # 3. Fuzzy Match of names
+            for ed in exp_dims:
+                eds = str(ed)
+                if eds in {"bnds", "axis_nbounds", "vertices", "nv4"}:
+                    continue
+                if self._fuzzy_match_dim(eds, act):
+                    continue
+                if eds.lower().startswith("height") and "height" in ds.variables:
+                    continue
+
+                res.extend(check_dimension_existence(ds, eds, sev))
+
+        return res
+
+    def check_variable_attributes(self, ds):
+        res = []
+        if (
+            not self.config
+            or not self.config.variable
+            or not self.config.variable.attributes
+        ):
+            return res
+        d_sev = (
+            self.get_severity(self.config.variable.attributes.severity)
+            if self.config.variable.attributes.severity
+            else BaseCheck.HIGH
+        )
+        geo, r = self._get_geo_var(ds, d_sev)
+        res.extend(r)
+        if not geo:
+            return res
+        exp, _, vr_r = self._get_expected_from_registry(ds, d_sev)
+        res.extend(vr_r)
+        if not exp:
+            return res
+
+        mapping = {
+            "units": ("cf_units", "units"),
+            "standard_name": ("cf_standard_name", "standard_name"),
+            "cell_methods": ("cell_methods", "cell_methods"),
+            "cell_measures": ("cell_measures", "cell_measures"),
+            "description": ("description", "description"),
+            "long_name": ("long_name", "long_name"),
+        }
+
+        for k, item in self.config.variable.attributes.items.items():
+            sev = self.get_severity(item.severity) if item else d_sev
+            if k in mapping:
+                vr_f, nc_a = mapping[k]
+                val = getattr(exp, vr_f, None)
+                if val and str(val).strip():
+                    res.extend(
+                        check_attribute_suite(
                             ds=ds,
-                            dimension_name=expected_dim,
-                            severity=self.get_severity("H")
-                        ))
-            # === Step 3: Check geophysical variable existence ===
-            results.extend(check_variable_existence(
-                ds=ds,
-                var_name=variable_id,
-                severity=self.get_severity("H")
-            ))
+                            attribute_name=nc_a,
+                            attribute_nc_name=None,
+                            severity=sev,
+                            value_type="str",
+                            is_required=True,
+                            constraint=re.escape(str(val).strip()),
+                            cv_collection=None,
+                            cv_collection_key=None,
+                            var_name=geo,
+                            project_name=self.project_name,
+                        )
+                    )
+        return res
 
-            # === Step 4: Check variable attributes ===
-            attribute_mapping = {
-                "cf_standard_name": "standard_name",
-                "cf_units": "units",
-                "cell_methods": "cell_methods",
-                "cell_measures": "cell_measures",
-                "description": "description"
-            }
-            for esg_key, netcdf_attr_name in attribute_mapping.items():
-                expected_val = getattr(expected, esg_key, None)
-                if expected_val:
-                    results.extend(check_attribute_suite(
-                        ds=ds,
-                        attribute_name=netcdf_attr_name,
-                        severity=self.get_severity("H"),
-                        expected_type="str",
-                        constraint=expected_val,
-                        var_name=variable_id,
-                        project_name=self.project_name
-                    ))
+    def check_variable_shape_bounds(self, ds):
+        res = []
+        if self.config and self.config.variable and self.config.variable.shape_bounds:
+            sev = self.get_severity(self.config.variable.shape_bounds.severity)
+            geo, r = self._get_geo_var(ds, sev)
+            if geo:
+                res.extend(check_bounds_value_consistency(ds, geo, sev))
+        return res
 
-        # === Step 5 : Check remaining dimensions and variables that were not expected ===
-        "Check remaining dimensions that were not expected (bnds/vertices/axis_nbounds..."
-        already_checked_dims = set(expected_dims)
-        all_dims = set(ds.dimensions.keys())
-        remaining_dims = all_dims - already_checked_dims
-        already_checked_vars = set(expected_dims + [variable_id])
-        remaining_vars = set(ds.variables.keys()) - already_checked_vars
-        for dim in sorted(remaining_dims):
-            results.extend(check_dimension_existence(
-                ds=ds,
-                dimension_name=dim,
-                severity=self.get_severity("H")
-            ))
+    def check_variable_bnds_vertices(self, ds):
+        res = []
+        if self.config and self.config.variable and self.config.variable.bnds_vertices:
+            sev = self.get_severity(self.config.variable.bnds_vertices.severity)
+            for d, s in [("bnds", 2), ("axis_nbounds", 2), ("vertices", 4), ("nv4", 4)]:
+                if d in ds.dimensions:
+                    res.extend(check_dimension_size_is_equals_to(ds, d, s, sev))
+        return res
 
-        for var in sorted(remaining_vars):
-            results.extend(check_variable_existence(
-                ds=ds,
-                var_name=var,
-                severity=self.get_severity("H")
-            ))
-        # === Step 6: Shape verification for variables ===
+    def check_variable_time_checks(self, ds):
+        res = []
+        if self.config and self.config.variable and self.config.variable.time_checks:
+            sev = self.get_severity(self.config.variable.time_checks.severity)
+            if "time" in ds.variables:
+                res.extend(check_time_range_vs_filename(ds, sev))
+                res.extend(check_time_bounds(ds, sev))
+        return res
 
-        all_expected_vars = expected_dims + [variable_id]
-        all_vars_checked = set()
+    # --- Coordinates Checks ---
+    def check_coordinates_auxiliary(self, ds):
+        res = []
+        if (
+            not self.config
+            or not self.config.coordinates
+            or not self.config.coordinates.auxiliary
+        ):
+            return res
+        sev = self.get_severity(self.config.coordinates.auxiliary.severity)
+        geo, r = self._get_geo_var(ds, sev)
+        res.extend(r)
+        if geo:
+            try:
+                for n in str(ds.variables[geo].getncattr("coordinates")).split():
+                    res.extend(check_variable_existence(ds, n.strip(), sev))
+            except Exception:
+                pass
+        return res
 
-        # Universe Variable checks
-        for var_name in sorted(set(all_expected_vars)):
-            if var_name in ds.variables:
-                results.extend(check_variable_shape(var_name, ds, severity=self.get_severity("H")))
-                results.extend(check_bounds_value_consistency(ds, var_name, severity=self.get_severity("H")))
-                all_vars_checked.add(var_name)
+    def check_coordinates_bounds(self, ds):
+        res = []
+        if (
+            not self.config
+            or not self.config.coordinates
+            or not self.config.coordinates.bounds
+        ):
+            return res
+        sev = self.get_severity(self.config.coordinates.bounds.severity)
+        geo, r = self._get_geo_var(ds, sev)
+        if not geo:
+            return res
+        cand = set()
+        try:
+            cand.update(ds.variables[geo].dimensions)
+        except (AttributeError, KeyError):
+            pass
+        try:
+            cand.update(str(ds.variables[geo].getncattr("coordinates")).split())
+        except (AttributeError, KeyError):
+            pass
+        for c in cand:
+            if c in ds.variables and hasattr(ds.variables[c], "bounds"):
+                res.extend(check_variable_existence(ds, ds.variables[c].bounds, sev))
+        return res
 
-        # Remaining Variables size checks
-        for var_name in sorted(remaining_vars):
-            if var_name not in all_vars_checked:
-                results.extend(check_variable_shape(var_name, ds, severity=self.get_severity("H")))
-                results.extend(check_bounds_value_consistency(ds, var_name, severity=self.get_severity("H")))
-                all_vars_checked.add(var_name)
+    def check_coordinates_properties(self, ds):
+        res = []
+        if (
+            not self.config
+            or not self.config.coordinates
+            or not self.config.coordinates.properties
+        ):
+            return res
 
-        # === Step 7 : Size Checks for bounds and vertices ====
+        sev = self.get_severity(self.config.coordinates.properties.severity)
 
-        for dim in remaining_dims:
-            if dim in ["bnds", "axis_nbounds"]:
-                results.extend(check_dimension_size_is_equals_to(ds, dimension_name=dim, expected_size=2,
-                                                                 severity=self.get_severity("H")))
+        try:
+            coords_dim = get_coordinate_variables(ds)
+            coords_aux = get_auxiliary_coordinate_variables(ds)
+            all_coords = set(coords_dim + coords_aux)
+        except Exception as e:
+            ctx = TestCtx(sev, "Coordinates Discovery")
+            ctx.add_failure(f"Failed to identify coordinates: {e}")
+            res.append(ctx.to_result())
+            return res
 
-        for dim in remaining_dims:
-            if dim in ["vertices", "nv4"]:
-                results.extend(check_dimension_size_is_equals_to(ds, dimension_name=dim, expected_size=4,
-                                                                 severity=self.get_severity("H")))
+        for cname in all_coords:
+            if cname not in ds.variables:
+                continue
+            var = ds.variables[cname]
 
-        # === Step 8 : Time Checks if time exists ====
-        for var in already_checked_vars:
-            if var in ["time"]:
-                results.extend(check_time_range_vs_filename(ds, severity=self.get_severity("H")))
-                results.extend(check_time_bounds(ds, severity=self.get_severity("H")))
+            if var.dtype.kind in ["S", "U", "O"]:
+                continue
 
-        return results
+            res.extend(
+                check_variable_type(ds, cname, allowed_types=["f", "i"], severity=sev)
+            )
 
+            if hasattr(var, "compress") or "bnds" in cname or "bounds" in cname:
+                continue
 
-    def check_Drs_Consistency(self, ds):
+            res.extend(
+                check_attribute_suite(
+                    ds=ds,
+                    attribute_name="units",
+                    severity=sev,
+                    is_required=True,
+                    var_name=cname,
+                    project_name=self.project_name,
+                )
+            )
+
+        return res
+
+    def check_coordinates_time_squareness(self, ds):
+        res = []
+
+        if (
+            not self.config
+            or not self.config.coordinates
+            or not self.config.coordinates.time
+            or not self.config.coordinates.time.squareness
+        ):
+            return res
+
+        rule = self.config.coordinates.time.squareness
+        sev = self.get_severity(rule.severity)
+
+        res.extend(
+            check_time_squareness(
+                ds,
+                severity=sev,
+                calendar=rule.calendar or "",
+                ref_time_units=rule.ref_time_units or "",
+                frequency=rule.frequency or {},
+            )
+        )
+        return res
+
+    # --- Calendar Check ----
+    def check_cmip7_output_requirements(self, ds):
         """
-        Runs the DRS consistency checks with Filename and Global Attributes
-        """
-        results = []
-        if "drs_consistency_checks" not in self.config:
-            return results
-
-        config = self.config["drs_consistency_checks"]
-        severity = self.get_severity(config.get("severity"))
-        project_id = "CMIP7"
-
-        # Call check PATH001
-        results.extend(check_attributes_match_directory_structure(
-            ds=ds,
-            severity=severity,
-            project_id=project_id
-        ))
-
-        # Call check PATH002
-        results.extend(check_filename_matches_directory_structure(
-            ds=ds,
-            severity=severity,
-            project_id=project_id
-        ))
-
-        return results
-
-
-    def check_consistency_filename_from_config(self, ds):
-        """
-        Runs Filename/Global_Attributes consistency checks defined in the TOML.
-        """
-        results = []
-        if "consistency_checks" not in self.config:
-            return results
-
-        config = self.config.get('consistency_checks', {})
-
-        if 'filename_vs_attributes' in config:
-            check_config = config['filename_vs_attributes']
-            results.extend(check_filename_vs_global_attrs(
-                ds=ds,
-                severity=self.get_severity(check_config.get('severity'))
-            ))
-
-        return results
-
-
-    def check_frequency_consistency_from_config(self, ds):
-        """
-        Runs the frequency vs table_id consistency check.
-        """
-        results = []
-
-        if "freq_table_id_consistency_checks" not in self.config:
-            return results
-
-        check_config = self.config['freq_table_id_consistency_checks']
-        severity = self.get_severity(check_config.get('severity'))
-
-        # Retrieves mapping table from config toml
-        mapping = self.config.get('frequency_table_id_mapping', {})
-        if not mapping:
-            return results
-
-        # Calls the atomic check by passing it the mapping
-        results.extend(check_frequency_table_id_consistency(
-            ds=ds,
-            mapping=mapping,
-            severity=severity
-        ))
-
-        return results
-
-
-    def check_experiment_consistency(self, ds):
-        """
-        Runs experiment consistency checks defined in the TOML.
-        """
-        results = []
-        if "consistency_checks" not in self.config:
-            return results
-
-        config = self.config.get('consistency_checks', {})
-        project_id = "cmip7"
-
-        # --- Call for experiment_id consistency check ---
-        if 'experiment_details' in config:
-            check_config = config['experiment_details']
-            print(check_experiment_consistency(ds=ds, severity=check_config.get('severity')), project_id='cmip7')
-            results.extend(check_experiment_consistency(
-                ds=ds,
-                severity=self.get_severity(check_config.get('severity')),
-                project_id=project_id
-            ))
-
-        return results
-
-
-    def check_variantlabel_consistency(self, ds):
-        """
-        Runs variant_label consistency checks defined in the TOML.
-        """
-        results = []
-        if "consistency_checks" not in self.config:
-            return results
-
-        config = self.config.get('consistency_checks', {})
-
-        # --- Call for variant_label consistency check ---
-        if 'variant_label' in config:
-            check_config = config['variant_label']
-            results.extend(check_variant_label_consistency(
-                ds=ds,
-                severity=self.get_severity(check_config.get('severity'))
-            ))
-
-        return results
-
-
-    def check_consistency_institution_source(self, ds):
-        """
-        Runs institution/source consistency checks defined in the TOML.
-        """
-
-        results = []
-        if "consistency_checks" not in self.config:
-            return results
-
-        config = self.config.get('consistency_checks', {})
-        project_id = "cmip7"
-        # --- Call for institution coherence check ---
-        if 'institution_details' in config:
-            check_config = config['institution_details']
-            results.extend(check_institution_consistency(
-                ds=ds,
-                severity=self.get_severity(check_config.get('severity')),
-                project_id=project_id
-            ))
-
-        # --- Call for source coherence check ---
-        if 'source_details' in config:
-            check_config = config['source_details']
-            results.extend(check_source_consistency(
-                ds=ds,
-                severity=self.get_severity(check_config.get('severity')),
-                project_id=project_id
-            ))
-
-        return results
-
-
-    def check_Data_Plausibility(self, ds):
-        """
-        Runs all DATAxxx plausibility checks on CMIP7 variables.
-        Each check produces a Result with its own DATA00X identifier.
+        Checks the compliance with CMIP7 Output Requirements.
         """
         results = []
 
         # Load configuration section
-        if "data_plausibility_checks" not in self.config:
+        if "cmip7_output_requirements" not in self.config:
             return results
+        config = self.config["cmip7_output_requirements"]
 
-        config = self.config["data_plausibility_checks"]
-        variable_id = getattr(ds, "variable_id", None)
-
-        # Retrieve the project name defined in TOML (default “CMIP”)
-        project = self.config.get("data_plausibility_checks", {}).get("project", "CMIP")
-
-        # === DATA001: NaN / Inf check ===
-        if config.get("check_nan_inf", {}).get("enabled", False):
-            ctx = check_nan_inf(
-                dataset=ds,
-                variable=variable_id,
-                parameter="NaN",
-                severity=self.get_severity(config["check_nan_inf"].get("severity"))
+        # Prefer "proleptic_gregorian" calendar over "standard" calendar
+        if config.get("calendar", {}).get("enabled", False):
+            results.extend(
+                check_calendar_cmip7(
+                    ds=ds,
+                    severity=self.get_severity(config["calendar"].get("severity")),
+                )
             )
-            ctx.description = f"[DATA001] Check for NaN/Inf values in variable '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA002: Fill / Missing value check ===
-        if config.get("check_fill_missing", {}).get("enabled", False):
-            ctx = check_fillvalues_timeseries(
-                dataset=ds,
-                variable=variable_id,
-                severity=self.get_severity(config["check_fill_missing"].get("severity"))
-            )
-            ctx.description = f"[DATA002] FillValue/MissingValue plausibility for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA003: Constant value check ===
-        if config.get("check_constant", {}).get("enabled", False):
-            ctx = check_constants(
-                dataset=ds,
-                variable=variable_id,
-                severity=self.get_severity(config["check_constant"].get("severity"))
-            )
-            ctx.description = f"[DATA003] Constant field detection for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA004: Physically impossible outlier check ===
-        if config.get("check_physically_impossible_outlier", {}).get("enabled", False):
-            ctx = check_outliers(
-                dataset=ds,
-                thresholds_file='outliers_thresholds.json',
-                severity=self.get_severity(config["check_physically_impossible_outlier"].get("severity"))
-            )
-            ctx.description = f"[DATA004] Physically impossible outlier detection for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA005: Spatial statistical outlier check ===
-        if config.get("check_spatial_statistical_outliers", {}).get("enabled", False):
-            ctx = check_spatial_statistical_outliers(
-                dataset=ds,
-                variable=variable_id,
-                severity=self.get_severity(config["check_spatial_statistical_outliers"].get("severity")),
-                threshold=config["check_spatial_statistical_outliers"].get("threshold", 5),
-                parameter=config["check_spatial_statistical_outliers"].get("method", "Z-Score")
-            )
-            ctx.description = f"[DATA005] Spatial statistical outlier ({ctx.description}) check for '{variable_id}'"
-            results.append(ctx.to_result())
-
-        # === DATA006: Chunk size check ===
-        if config.get("check_chunk_size", {}).get("enabled", False):
-            ctx = check_chunk_size(
-                dataset=ds,
-                severity=self.get_severity(config["check_chunk_size"].get("severity"))
-            )
-            ctx.description = "[DATA006] Chunk size compliance check for 'time' and 'time_bnds'"
-            results.append(ctx.to_result())
 
         return results
+
+    # --- Consistency Checks ---
+    def check_consistency_drs(self, ds):
+        res = []
+        if self.config and self.config.drs and self.config.drs.consistency:
+            sev = self.get_severity(self.config.drs.consistency.severity)
+            res.extend(
+                check_attributes_match_directory_structure(ds, sev, self.project_name)
+            )
+            res.extend(
+                check_filename_matches_directory_structure(ds, sev, self.project_name)
+            )
+        return res
+
+    def check_consistency_filename(self, ds):
+        res = []
+        if (
+            self.config
+            and self.config.consistency_checks
+            and self.config.consistency_checks.filename_vs_attributes
+        ):
+            sev = self.get_severity(
+                self.config.consistency_checks.filename_vs_attributes.severity
+            )
+            res.extend(check_filename_vs_global_attrs(ds, sev))
+        return res
+
+    def check_experiment_consistency(self, ds):
+        res = []
+        if (
+            self.config
+            and self.config.consistency_checks
+            and self.config.consistency_checks.experiment_details
+        ):
+            sev = self.get_severity(
+                self.config.consistency_checks.experiment_details.severity
+            )
+            res.extend(check_experiment_consistency(ds, sev, self.project_name))
+        return res
+
+    def check_consistency_institution_source(self, ds):
+        res = []
+        if not self.config or not self.config.consistency_checks:
+            return res
+        if self.config.consistency_checks.institution_details:
+            sev = self.get_severity(
+                self.config.consistency_checks.institution_details.severity
+            )
+            res.extend(check_institution_consistency(ds, sev, self.project_name))
+        if self.config.consistency_checks.source_details:
+            sev = self.get_severity(
+                self.config.consistency_checks.source_details.severity
+            )
+            res.extend(check_source_consistency(ds, sev, self.project_name))
+        return res
