@@ -435,6 +435,92 @@ severity = "H"
 [coordinates.properties]
 severity = "H"
 
+# ==============================================================================
+# == Variable Value Checks
+# ==============================================================================
+
+# Value range checks
+[variable_checks.check_lat_value_range]
+# V036: lat values within -90 to 90
+severity = "H"
+
+[variable_checks.check_lon_value_range]
+# V074: lon values within 0 to 360
+severity = "H"
+
+[variable_checks.check_lat_bnds_value_range]
+# V044: lat_bnds values within -90 to 90
+severity = "H"
+
+[variable_checks.check_lon_bnds_value_range]
+# V082: lon_bnds values within 0 to 360
+severity = "H"
+
+[variable_checks.check_vertices_latitude_value_range]
+# V222: vertices_latitude values within -90 to 90
+severity = "H"
+
+[variable_checks.check_vertices_longitude_value_range]
+# V227: vertices_longitude values within 0 to 360
+severity = "H"
+
+# Strictly positive checks
+[variable_checks.check_height_strictly_positive]
+# V003: height values strictly positive
+severity = "H"
+
+[variable_checks.check_i_strictly_positive]
+# V208: i values strictly positive
+severity = "H"
+
+[variable_checks.check_j_strictly_positive]
+# V215: j values strictly positive
+severity = "H"
+
+# Bounds monotonicity checks
+[variable_checks.check_lat_bnds_monotonicity]
+# V042: lat_bnds monotonically non-decreasing
+severity = "M"
+
+[variable_checks.check_lon_bnds_monotonicity]
+# V080: lon_bnds monotonically non-decreasing
+severity = "M"
+
+# Bounds contiguity checks
+[variable_checks.check_lat_bnds_contiguity]
+# V043: lat_bnds no gaps or overlaps
+severity = "M"
+
+[variable_checks.check_lon_bnds_contiguity]
+# V081: lon_bnds no gaps or overlaps
+severity = "M"
+
+# Data within actual_range checks
+[variable_checks.check_lat_data_within_actual_range]
+# V067: lat data within actual_range attribute
+severity = "L"
+
+[variable_checks.check_lon_data_within_actual_range]
+# V105: lon data within actual_range attribute
+severity = "L"
+
+# Fill value checks
+[variable_checks.check_vertices_latitude_missing_value]
+# V250: vertices_latitude missing_value = 1.e+20
+severity = "M"
+
+[variable_checks.check_vertices_latitude_fill_value]
+# V253: vertices_latitude _FillValue = 1.e+20
+severity = "M"
+
+[variable_checks.check_vertices_longitude_missing_value]
+# V260: vertices_longitude missing_value = 1.e+20
+severity = "M"
+
+[variable_checks.check_vertices_longitude_fill_value]
+# V263: vertices_longitude _FillValue = 1.e+20
+severity = "M"
+
 [coordinates.time.squareness]
 # Check TIME001
 severity = "H"

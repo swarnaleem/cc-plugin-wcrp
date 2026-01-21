@@ -55,6 +55,37 @@ from checks.format_checks.check_format import check_format
 from checks.time_checks.check_time_bounds import check_time_bounds
 from checks.time_checks.check_time_range_vs_filename import check_time_range_vs_filename
 from checks.time_checks.check_time_squareness import check_time_squareness
+from checks.variable_checks.check_value_range import (
+    check_lat_value_range,
+    check_lon_value_range,
+    check_lat_bnds_value_range,
+    check_lon_bnds_value_range,
+    check_vertices_latitude_value_range,
+    check_vertices_longitude_value_range,
+)
+from checks.variable_checks.check_strictly_positive import (
+    check_height_strictly_positive,
+    check_i_strictly_positive,
+    check_j_strictly_positive,
+)
+from checks.variable_checks.check_bounds_monotonicity import (
+    check_lat_bnds_monotonicity,
+    check_lon_bnds_monotonicity,
+)
+from checks.variable_checks.check_bounds_contiguity import (
+    check_lat_bnds_contiguity,
+    check_lon_bnds_contiguity,
+)
+from checks.variable_checks.check_data_within_actual_range import (
+    check_lat_data_within_actual_range,
+    check_lon_data_within_actual_range,
+)
+from checks.variable_checks.check_fill_value_equals import (
+    check_vertices_latitude_missing_value,
+    check_vertices_latitude_fill_value,
+    check_vertices_longitude_missing_value,
+    check_vertices_longitude_fill_value,
+)
 
 
 # --- CF Checker helpers ---
@@ -194,6 +225,7 @@ class CMIP6Config(BaseModel):
     global_attributes: Dict[str, AttributeRule] = Field(default_factory=dict)
     variable_attributes: Optional[Dict[str, Dict[str, AttributeRule]]] = None
     variable: Optional[VariableSection] = None
+    variable_checks: Optional[Dict[str, SimpleCheck]] = None
     coordinates: Optional[CoordinatesSection] = None
     consistency_checks: Optional[ConsistencyChecks] = None
     frequency_table_id_mapping: Optional[Dict[str, List[str]]] = None
@@ -862,4 +894,215 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
                 self.config.consistency_checks.source_details.severity
             )
             res.extend(check_source_consistency(ds, sev, self.project_name))
+        return res
+
+    # --- Variable Value Checks ---
+
+    def check_lat_value_range(self, ds):
+        """[V036] Check lat values are within -90 to 90 degrees."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_value_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_value_range(ds, sev))
+        return res
+
+    def check_lon_value_range(self, ds):
+        """[V074] Check lon values are within 0 to 360 degrees."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_value_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_value_range(ds, sev))
+        return res
+
+    def check_lat_bnds_value_range(self, ds):
+        """[V044] Check lat_bnds values are within -90 to 90 degrees."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_value_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_bnds_value_range(ds, sev))
+        return res
+
+    def check_lon_bnds_value_range(self, ds):
+        """[V082] Check lon_bnds values are within 0 to 360 degrees."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_value_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_bnds_value_range(ds, sev))
+        return res
+
+    def check_vertices_latitude_value_range(self, ds):
+        """[V222] Check vertices_latitude values are within -90 to 90 degrees."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_value_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_value_range(ds, sev))
+        return res
+
+    def check_vertices_longitude_value_range(self, ds):
+        """[V227] Check vertices_longitude values are within 0 to 360 degrees."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_value_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_value_range(ds, sev))
+        return res
+
+    def check_height_strictly_positive(self, ds):
+        """[V003] Check height values are strictly positive."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_strictly_positive")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_strictly_positive(ds, sev))
+        return res
+
+    def check_i_strictly_positive(self, ds):
+        """[V208] Check i values are strictly positive."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_strictly_positive")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_strictly_positive(ds, sev))
+        return res
+
+    def check_j_strictly_positive(self, ds):
+        """[V215] Check j values are strictly positive."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_strictly_positive")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_strictly_positive(ds, sev))
+        return res
+
+    def check_lat_bnds_monotonicity(self, ds):
+        """[V042] Check lat_bnds values are monotonically non-decreasing."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_monotonicity")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_bnds_monotonicity(ds, sev))
+        return res
+
+    def check_lon_bnds_monotonicity(self, ds):
+        """[V080] Check lon_bnds values are monotonically non-decreasing."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_monotonicity")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_bnds_monotonicity(ds, sev))
+        return res
+
+    def check_lat_bnds_contiguity(self, ds):
+        """[V043] Check lat_bnds intervals have no gaps or overlaps."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_contiguity")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_bnds_contiguity(ds, sev))
+        return res
+
+    def check_lon_bnds_contiguity(self, ds):
+        """[V081] Check lon_bnds intervals have no gaps or overlaps."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_contiguity")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_bnds_contiguity(ds, sev))
+        return res
+
+    def check_lat_data_within_actual_range(self, ds):
+        """[V067] Check lat data falls within declared actual_range."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_data_within_actual_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_data_within_actual_range(ds, sev))
+        return res
+
+    def check_lon_data_within_actual_range(self, ds):
+        """[V105] Check lon data falls within declared actual_range."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_data_within_actual_range")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_data_within_actual_range(ds, sev))
+        return res
+
+    def check_vertices_latitude_missing_value(self, ds):
+        """[V250] Check vertices_latitude missing_value equals 1.e+20."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_missing_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_missing_value(ds, sev))
+        return res
+
+    def check_vertices_latitude_fill_value(self, ds):
+        """[V253] Check vertices_latitude _FillValue equals 1.e+20."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_fill_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_fill_value(ds, sev))
+        return res
+
+    def check_vertices_longitude_missing_value(self, ds):
+        """[V260] Check vertices_longitude missing_value equals 1.e+20."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_missing_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_missing_value(ds, sev))
+        return res
+
+    def check_vertices_longitude_fill_value(self, ds):
+        """[V263] Check vertices_longitude _FillValue equals 1.e+20."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_fill_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_fill_value(ds, sev))
         return res

@@ -328,6 +328,55 @@ def _compare_CV(CheckerObject, dic2comp, errmsg_prefix):
                                 )
     return checked, messages
 
+# === Variable data utilities ===
+
+
+def get_variable_data(ds, var_name):
+    """
+    Get variable data, handling masked arrays and flattening.
+
+    Args:
+        ds: NetCDF dataset
+        var_name: Name of the variable to retrieve
+
+    Returns:
+        tuple: (data, error_msg) - data is flattened numpy array, error_msg is None on success
+    """
+    if var_name not in ds.variables:
+        return None, f"Variable '{var_name}' not found in dataset."
+
+    var = ds.variables[var_name]
+    data = var[:]
+
+    # Handle masked arrays
+    if hasattr(data, "compressed"):
+        data = data.compressed()
+
+    # Flatten for consistent handling
+    data = np.asarray(data).flatten()
+    return data, None
+
+
+def get_bounds_data(ds, bnds_var_name):
+    """
+    Get bounds data and validate shape is (n, 2).
+
+    Args:
+        ds: NetCDF dataset
+        bnds_var_name: Name of the bounds variable to retrieve
+
+    Returns:
+        tuple: (bnds, error_msg) - bnds is numpy array with shape (n, 2), error_msg is None on success
+    """
+    if bnds_var_name not in ds.variables:
+        return None, f"Bounds variable '{bnds_var_name}' not found in dataset."
+
+    bnds = ds.variables[bnds_var_name][:]
+
+    if bnds.ndim != 2 or bnds.shape[1] != 2:
+        return None, f"Bounds variable '{bnds_var_name}' has unexpected shape {bnds.shape}. Expected (n, 2) for interval bounds."
+
+    return bnds, None
 
 # === Further utils ===
 
