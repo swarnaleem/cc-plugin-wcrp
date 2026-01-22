@@ -26,6 +26,10 @@ from checks.dimension_checks.check_dimension_size import (
 from checks.variable_checks.check_bounds_value_consistency import (
     check_bounds_value_consistency,
 )
+from checks.variable_checks.check_variable_shape_vs_dimensions import (
+    check_variable_shape,
+)
+from checks.data_plausibility_checks.check_nan_inf import check_nan_inf
 from checks.consistency_checks.check_drs_filename_cv import (
     check_drs_filename,
     check_drs_directory,
@@ -85,6 +89,140 @@ from checks.variable_checks.check_fill_value_equals import (
     check_vertices_latitude_fill_value,
     check_vertices_longitude_missing_value,
     check_vertices_longitude_fill_value,
+)
+from checks.variable_checks.check_var_existence import (
+    check_lat_exists,
+    check_lon_exists,
+    check_height_exists,
+    check_lat_bnds_exists,
+    check_lon_bnds_exists,
+    check_i_exists,
+    check_j_exists,
+    check_vertices_latitude_exists,
+    check_vertices_longitude_exists,
+)
+from checks.variable_checks.check_var_type import (
+    check_lat_type,
+    check_lon_type,
+    check_height_type,
+    check_lat_bnds_type,
+    check_lon_bnds_type,
+    check_i_type,
+    check_j_type,
+    check_vertices_latitude_type,
+    check_vertices_longitude_type,
+)
+from checks.variable_checks.check_var_shape import (
+    check_lat_shape,
+    check_lon_shape,
+    check_lat_bnds_shape,
+    check_lon_bnds_shape,
+    check_i_shape,
+    check_j_shape,
+    check_vertices_latitude_shape,
+    check_vertices_longitude_shape,
+)
+from checks.variable_checks.check_no_nan_inf import (
+    check_lat_no_nan_inf,
+    check_lon_no_nan_inf,
+    check_lat_bnds_no_nan_inf,
+    check_lon_bnds_no_nan_inf,
+    check_i_no_nan_inf,
+    check_j_no_nan_inf,
+    check_vertices_latitude_no_nan_inf,
+    check_vertices_longitude_no_nan_inf,
+)
+from checks.variable_checks.check_values_within_bounds import (
+    check_lat_values_within_bounds,
+    check_lon_values_within_bounds,
+)
+from checks.variable_checks.check_var_attributes import (
+    # Height attribute checks
+    check_height_axis_exists,
+    check_height_axis_type,
+    check_height_axis_utf8,
+    check_height_axis_value,
+    check_height_standard_name_type,
+    check_height_standard_name_utf8,
+    check_height_standard_name_value,
+    check_height_long_name_exists,
+    check_height_long_name_type,
+    check_height_long_name_utf8,
+    check_height_long_name_value,
+    check_height_units_type,
+    check_height_units_utf8,
+    check_height_positive_type,
+    check_height_positive_utf8,
+    # Lat attribute checks
+    check_lat_axis_type,
+    check_lat_axis_utf8,
+    check_lat_axis_value,
+    check_lat_standard_name_type,
+    check_lat_standard_name_utf8,
+    check_lat_long_name_exists,
+    check_lat_long_name_type,
+    check_lat_long_name_utf8,
+    check_lat_long_name_value,
+    check_lat_units_type,
+    check_lat_units_utf8,
+    check_lat_bounds_exists,
+    check_lat_bounds_type,
+    check_lat_bounds_utf8,
+    check_lat_actual_range_exists,
+    check_lat_actual_range_type,
+    # Lon attribute checks
+    check_lon_axis_type,
+    check_lon_axis_utf8,
+    check_lon_axis_value,
+    check_lon_standard_name_type,
+    check_lon_standard_name_utf8,
+    check_lon_long_name_exists,
+    check_lon_long_name_type,
+    check_lon_long_name_utf8,
+    check_lon_long_name_value,
+    check_lon_units_type,
+    check_lon_units_utf8,
+    check_lon_bounds_exists,
+    check_lon_bounds_type,
+    check_lon_bounds_utf8,
+    check_lon_actual_range_exists,
+    check_lon_actual_range_type,
+    # i attribute checks
+    check_i_units_exists,
+    check_i_units_type,
+    check_i_units_utf8,
+    check_i_units_value,
+    check_i_long_name_exists,
+    check_i_long_name_type,
+    check_i_long_name_utf8,
+    check_i_long_name_value,
+    # j attribute checks
+    check_j_units_exists,
+    check_j_units_type,
+    check_j_units_utf8,
+    check_j_units_value,
+    check_j_long_name_exists,
+    check_j_long_name_type,
+    check_j_long_name_utf8,
+    check_j_long_name_value,
+    # vertices_latitude attribute checks
+    check_vertices_latitude_units_exists,
+    check_vertices_latitude_units_type,
+    check_vertices_latitude_units_utf8,
+    check_vertices_latitude_units_value,
+    check_vertices_latitude_missing_value_exists,
+    check_vertices_latitude_missing_value_type,
+    check_vertices_latitude_fillvalue_exists,
+    check_vertices_latitude_fillvalue_type,
+    # vertices_longitude attribute checks
+    check_vertices_longitude_units_exists,
+    check_vertices_longitude_units_type,
+    check_vertices_longitude_units_utf8,
+    check_vertices_longitude_units_value,
+    check_vertices_longitude_missing_value_exists,
+    check_vertices_longitude_missing_value_type,
+    check_vertices_longitude_fillvalue_exists,
+    check_vertices_longitude_fillvalue_type,
 )
 
 
@@ -1105,4 +1243,1339 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
         if check_config:
             sev = self.get_severity(check_config.severity)
             res.extend(check_vertices_longitude_fill_value(ds, sev))
+        return res
+
+    # --- Variable Existence Checks ---
+
+    def check_height_exists_v(self, ds):
+        """[V001] Check height variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "height", sev))
+        return res
+
+    def check_lat_exists_v(self, ds):
+        """[V030] Check lat variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "lat", sev))
+        return res
+
+    def check_lat_bnds_exists_v(self, ds):
+        """[V038] Check lat_bnds variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "lat_bnds", sev))
+        return res
+
+    def check_lon_exists_v(self, ds):
+        """[V068] Check lon variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "lon", sev))
+        return res
+
+    def check_lon_bnds_exists_v(self, ds):
+        """[V076] Check lon_bnds variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "lon_bnds", sev))
+        return res
+
+    def check_i_exists_v(self, ds):
+        """[V204] Check i variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "i", sev))
+        return res
+
+    def check_j_exists_v(self, ds):
+        """[V211] Check j variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "j", sev))
+        return res
+
+    def check_vertices_latitude_exists_v(self, ds):
+        """[V218] Check vertices_latitude variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "vertices_latitude", sev))
+        return res
+
+    def check_vertices_longitude_exists_v(self, ds):
+        """[V223] Check vertices_longitude variable exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_existence(ds, "vertices_longitude", sev))
+        return res
+
+    # --- Variable Type Checks ---
+
+    def check_height_type_v(self, ds):
+        """[V002] Check height variable type is NC_DOUBLE (float)."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "height", allowed_types=["f"], severity=sev))
+        return res
+
+    def check_lat_type_v(self, ds):
+        """[V031] Check lat variable type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "lat", allowed_types=["f"], severity=sev))
+        return res
+
+    def check_lat_bnds_type_v(self, ds):
+        """[V039] Check lat_bnds variable type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "lat_bnds", allowed_types=["f"], severity=sev))
+        return res
+
+    def check_lon_type_v(self, ds):
+        """[V069] Check lon variable type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "lon", allowed_types=["f"], severity=sev))
+        return res
+
+    def check_lon_bnds_type_v(self, ds):
+        """[V077] Check lon_bnds variable type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "lon_bnds", allowed_types=["f"], severity=sev))
+        return res
+
+    def check_i_type_v(self, ds):
+        """[V205] Check i variable type is NC_INT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "i", allowed_types=["i"], severity=sev))
+        return res
+
+    def check_j_type_v(self, ds):
+        """[V212] Check j variable type is NC_INT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "j", allowed_types=["i"], severity=sev))
+        return res
+
+    def check_vertices_latitude_type_v(self, ds):
+        """[V219] Check vertices_latitude variable type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "vertices_latitude", allowed_types=["f"], severity=sev))
+        return res
+
+    def check_vertices_longitude_type_v(self, ds):
+        """[V224] Check vertices_longitude variable type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_type(ds, "vertices_longitude", allowed_types=["f"], severity=sev))
+        return res
+
+    # --- Variable Shape Checks ---
+
+    def check_lat_shape_v(self, ds):
+        """[V032] Check lat shape aligns with lat dimension."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("lat", ds, sev))
+        return res
+
+    def check_lat_bnds_shape_v(self, ds):
+        """[V040] Check lat_bnds shape aligns with dimensions."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("lat_bnds", ds, sev))
+        return res
+
+    def check_lon_shape_v(self, ds):
+        """[V070] Check lon shape aligns with lon dimension."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("lon", ds, sev))
+        return res
+
+    def check_lon_bnds_shape_v(self, ds):
+        """[V078] Check lon_bnds shape aligns with dimensions."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("lon_bnds", ds, sev))
+        return res
+
+    def check_i_shape_v(self, ds):
+        """[V206] Check i shape aligns with i dimension."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("i", ds, sev))
+        return res
+
+    def check_j_shape_v(self, ds):
+        """[V213] Check j shape aligns with j dimension."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("j", ds, sev))
+        return res
+
+    def check_vertices_latitude_shape_v(self, ds):
+        """[V220] Check vertices_latitude shape aligns with dimensions."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("vertices_latitude", ds, sev))
+        return res
+
+    def check_vertices_longitude_shape_v(self, ds):
+        """[V225] Check vertices_longitude shape aligns with dimensions."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_shape")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_variable_shape("vertices_longitude", ds, sev))
+        return res
+
+    # --- No NaN/Inf/Missing Checks ---
+
+    def check_lat_no_nan_inf_v(self, ds):
+        """[V033] Check lat has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "lat" in ds.variables:
+                ctx = check_nan_inf(ds, "lat", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "lat", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_lat_bnds_no_nan_inf_v(self, ds):
+        """[V041] Check lat_bnds has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bnds_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "lat_bnds" in ds.variables:
+                ctx = check_nan_inf(ds, "lat_bnds", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "lat_bnds", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_lon_no_nan_inf_v(self, ds):
+        """[V071] Check lon has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "lon" in ds.variables:
+                ctx = check_nan_inf(ds, "lon", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "lon", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_lon_bnds_no_nan_inf_v(self, ds):
+        """[V079] Check lon_bnds has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bnds_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "lon_bnds" in ds.variables:
+                ctx = check_nan_inf(ds, "lon_bnds", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "lon_bnds", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_i_no_nan_inf_v(self, ds):
+        """[V207] Check i has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "i" in ds.variables:
+                ctx = check_nan_inf(ds, "i", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "i", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_j_no_nan_inf_v(self, ds):
+        """[V214] Check j has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "j" in ds.variables:
+                ctx = check_nan_inf(ds, "j", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "j", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_vertices_latitude_no_nan_inf_v(self, ds):
+        """[V221] Check vertices_latitude has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "vertices_latitude" in ds.variables:
+                ctx = check_nan_inf(ds, "vertices_latitude", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "vertices_latitude", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    def check_vertices_longitude_no_nan_inf_v(self, ds):
+        """[V226] Check vertices_longitude has no missing, Inf, or NaN values."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_no_nan_inf")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            if "vertices_longitude" in ds.variables:
+                ctx = check_nan_inf(ds, "vertices_longitude", parameter="NaN", severity=sev)
+                res.append(ctx.to_result())
+                ctx = check_nan_inf(ds, "vertices_longitude", parameter="Inf", severity=sev)
+                res.append(ctx.to_result())
+        return res
+
+    # --- Values Within Bounds Checks ---
+
+    def check_lat_within_bounds_v(self, ds):
+        """[V037] Check lat values lie within lat_bnds range."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_within_bounds")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_bounds_value_consistency(ds, "lat", sev))
+        return res
+
+    def check_lon_within_bounds_v(self, ds):
+        """[V075] Check lon values lie within lon_bnds range."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_within_bounds")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_bounds_value_consistency(ds, "lon", sev))
+        return res
+
+    # ===========================================================================
+    # HEIGHT ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_height_axis_exists_v(self, ds):
+        """[V004] Check height.axis attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_axis_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_axis_exists(ds, sev))
+        return res
+
+    def check_height_axis_type_v(self, ds):
+        """[V005] Check height.axis attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_axis_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_axis_type(ds, sev))
+        return res
+
+    def check_height_axis_utf8_v(self, ds):
+        """[V006] Check height.axis attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_axis_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_axis_utf8(ds, sev))
+        return res
+
+    def check_height_axis_value_v(self, ds):
+        """[V007] Check height.axis attribute value equals 'Z'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_axis_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_axis_value(ds, sev))
+        return res
+
+    def check_height_standard_name_type_v(self, ds):
+        """[V009] Check height.standard_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_standard_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_standard_name_type(ds, sev))
+        return res
+
+    def check_height_standard_name_utf8_v(self, ds):
+        """[V010] Check height.standard_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_standard_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_standard_name_utf8(ds, sev))
+        return res
+
+    def check_height_standard_name_value_v(self, ds):
+        """[V011] Check height.standard_name attribute value equals 'height'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_standard_name_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_standard_name_value(ds, sev))
+        return res
+
+    def check_height_long_name_exists_v(self, ds):
+        """[V012] Check height.long_name attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_long_name_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_long_name_exists(ds, sev))
+        return res
+
+    def check_height_long_name_type_v(self, ds):
+        """[V013] Check height.long_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_long_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_long_name_type(ds, sev))
+        return res
+
+    def check_height_long_name_utf8_v(self, ds):
+        """[V014] Check height.long_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_long_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_long_name_utf8(ds, sev))
+        return res
+
+    def check_height_long_name_value_v(self, ds):
+        """[V015] Check height.long_name attribute value equals 'height'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_long_name_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_long_name_value(ds, sev))
+        return res
+
+    def check_height_units_type_v(self, ds):
+        """[V017] Check height.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_units_type(ds, sev))
+        return res
+
+    def check_height_units_utf8_v(self, ds):
+        """[V018] Check height.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_units_utf8(ds, sev))
+        return res
+
+    def check_height_positive_type_v(self, ds):
+        """[V021] Check height.positive attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_positive_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_positive_type(ds, sev))
+        return res
+
+    def check_height_positive_utf8_v(self, ds):
+        """[V022] Check height.positive attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_height_positive_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_height_positive_utf8(ds, sev))
+        return res
+
+    # ===========================================================================
+    # LAT ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_lat_axis_type_v(self, ds):
+        """[V046] Check lat.axis attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_axis_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_axis_type(ds, sev))
+        return res
+
+    def check_lat_axis_utf8_v(self, ds):
+        """[V047] Check lat.axis attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_axis_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_axis_utf8(ds, sev))
+        return res
+
+    def check_lat_axis_value_v(self, ds):
+        """[V048] Check lat.axis attribute value equals 'Y'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_axis_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_axis_value(ds, sev))
+        return res
+
+    def check_lat_standard_name_type_v(self, ds):
+        """[V050] Check lat.standard_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_standard_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_standard_name_type(ds, sev))
+        return res
+
+    def check_lat_standard_name_utf8_v(self, ds):
+        """[V051] Check lat.standard_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_standard_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_standard_name_utf8(ds, sev))
+        return res
+
+    def check_lat_long_name_exists_v(self, ds):
+        """[V053] Check lat.long_name attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_long_name_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_long_name_exists(ds, sev))
+        return res
+
+    def check_lat_long_name_type_v(self, ds):
+        """[V054] Check lat.long_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_long_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_long_name_type(ds, sev))
+        return res
+
+    def check_lat_long_name_utf8_v(self, ds):
+        """[V055] Check lat.long_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_long_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_long_name_utf8(ds, sev))
+        return res
+
+    def check_lat_long_name_value_v(self, ds):
+        """[V056] Check lat.long_name attribute value equals 'latitude'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_long_name_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_long_name_value(ds, sev))
+        return res
+
+    def check_lat_units_type_v(self, ds):
+        """[V058] Check lat.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_units_type(ds, sev))
+        return res
+
+    def check_lat_units_utf8_v(self, ds):
+        """[V059] Check lat.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_units_utf8(ds, sev))
+        return res
+
+    def check_lat_bounds_exists_v(self, ds):
+        """[V061] Check lat.bounds attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bounds_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_bounds_exists(ds, sev))
+        return res
+
+    def check_lat_bounds_type_v(self, ds):
+        """[V062] Check lat.bounds attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bounds_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_bounds_type(ds, sev))
+        return res
+
+    def check_lat_bounds_utf8_v(self, ds):
+        """[V063] Check lat.bounds attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_bounds_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_bounds_utf8(ds, sev))
+        return res
+
+    def check_lat_actual_range_exists_v(self, ds):
+        """[V065] Check lat.actual_range attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_actual_range_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_actual_range_exists(ds, sev))
+        return res
+
+    def check_lat_actual_range_type_v(self, ds):
+        """[V066] Check lat.actual_range attribute type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lat_actual_range_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lat_actual_range_type(ds, sev))
+        return res
+
+    # ===========================================================================
+    # LON ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_lon_axis_type_v(self, ds):
+        """[V084] Check lon.axis attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_axis_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_axis_type(ds, sev))
+        return res
+
+    def check_lon_axis_utf8_v(self, ds):
+        """[V085] Check lon.axis attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_axis_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_axis_utf8(ds, sev))
+        return res
+
+    def check_lon_axis_value_v(self, ds):
+        """[V086] Check lon.axis attribute value equals 'X'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_axis_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_axis_value(ds, sev))
+        return res
+
+    def check_lon_standard_name_type_v(self, ds):
+        """[V088] Check lon.standard_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_standard_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_standard_name_type(ds, sev))
+        return res
+
+    def check_lon_standard_name_utf8_v(self, ds):
+        """[V089] Check lon.standard_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_standard_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_standard_name_utf8(ds, sev))
+        return res
+
+    def check_lon_long_name_exists_v(self, ds):
+        """[V091] Check lon.long_name attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_long_name_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_long_name_exists(ds, sev))
+        return res
+
+    def check_lon_long_name_type_v(self, ds):
+        """[V092] Check lon.long_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_long_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_long_name_type(ds, sev))
+        return res
+
+    def check_lon_long_name_utf8_v(self, ds):
+        """[V093] Check lon.long_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_long_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_long_name_utf8(ds, sev))
+        return res
+
+    def check_lon_long_name_value_v(self, ds):
+        """[V094] Check lon.long_name attribute value equals 'longitude'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_long_name_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_long_name_value(ds, sev))
+        return res
+
+    def check_lon_units_type_v(self, ds):
+        """[V096] Check lon.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_units_type(ds, sev))
+        return res
+
+    def check_lon_units_utf8_v(self, ds):
+        """[V097] Check lon.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_units_utf8(ds, sev))
+        return res
+
+    def check_lon_bounds_exists_v(self, ds):
+        """[V099] Check lon.bounds attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bounds_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_bounds_exists(ds, sev))
+        return res
+
+    def check_lon_bounds_type_v(self, ds):
+        """[V100] Check lon.bounds attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bounds_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_bounds_type(ds, sev))
+        return res
+
+    def check_lon_bounds_utf8_v(self, ds):
+        """[V101] Check lon.bounds attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_bounds_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_bounds_utf8(ds, sev))
+        return res
+
+    def check_lon_actual_range_exists_v(self, ds):
+        """[V103] Check lon.actual_range attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_actual_range_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_actual_range_exists(ds, sev))
+        return res
+
+    def check_lon_actual_range_type_v(self, ds):
+        """[V104] Check lon.actual_range attribute type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_lon_actual_range_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_lon_actual_range_type(ds, sev))
+        return res
+
+    # ===========================================================================
+    # I VARIABLE ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_i_units_exists_v(self, ds):
+        """[V228] Check i.units attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_units_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_units_exists(ds, sev))
+        return res
+
+    def check_i_units_type_v(self, ds):
+        """[V229] Check i.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_units_type(ds, sev))
+        return res
+
+    def check_i_units_utf8_v(self, ds):
+        """[V230] Check i.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_units_utf8(ds, sev))
+        return res
+
+    def check_i_units_value_v(self, ds):
+        """[V231] Check i.units attribute value equals '1'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_units_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_units_value(ds, sev))
+        return res
+
+    def check_i_long_name_exists_v(self, ds):
+        """[V232] Check i.long_name attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_long_name_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_long_name_exists(ds, sev))
+        return res
+
+    def check_i_long_name_type_v(self, ds):
+        """[V233] Check i.long_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_long_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_long_name_type(ds, sev))
+        return res
+
+    def check_i_long_name_utf8_v(self, ds):
+        """[V234] Check i.long_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_long_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_long_name_utf8(ds, sev))
+        return res
+
+    def check_i_long_name_value_v(self, ds):
+        """[V235] Check i.long_name attribute value equals 'cell index'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_i_long_name_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_i_long_name_value(ds, sev))
+        return res
+
+    # ===========================================================================
+    # J VARIABLE ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_j_units_exists_v(self, ds):
+        """[V236] Check j.units attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_units_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_units_exists(ds, sev))
+        return res
+
+    def check_j_units_type_v(self, ds):
+        """[V237] Check j.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_units_type(ds, sev))
+        return res
+
+    def check_j_units_utf8_v(self, ds):
+        """[V238] Check j.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_units_utf8(ds, sev))
+        return res
+
+    def check_j_units_value_v(self, ds):
+        """[V239] Check j.units attribute value equals '1'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_units_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_units_value(ds, sev))
+        return res
+
+    def check_j_long_name_exists_v(self, ds):
+        """[V240] Check j.long_name attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_long_name_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_long_name_exists(ds, sev))
+        return res
+
+    def check_j_long_name_type_v(self, ds):
+        """[V241] Check j.long_name attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_long_name_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_long_name_type(ds, sev))
+        return res
+
+    def check_j_long_name_utf8_v(self, ds):
+        """[V242] Check j.long_name attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_long_name_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_long_name_utf8(ds, sev))
+        return res
+
+    def check_j_long_name_value_v(self, ds):
+        """[V243] Check j.long_name attribute value equals 'cell index'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_j_long_name_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_j_long_name_value(ds, sev))
+        return res
+
+    # ===========================================================================
+    # VERTICES_LATITUDE ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_vertices_latitude_units_exists_v(self, ds):
+        """[V244] Check vertices_latitude.units attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_units_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_units_exists(ds, sev))
+        return res
+
+    def check_vertices_latitude_units_type_v(self, ds):
+        """[V245] Check vertices_latitude.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_units_type(ds, sev))
+        return res
+
+    def check_vertices_latitude_units_utf8_v(self, ds):
+        """[V246] Check vertices_latitude.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_units_utf8(ds, sev))
+        return res
+
+    def check_vertices_latitude_units_value_v(self, ds):
+        """[V247] Check vertices_latitude.units attribute value equals 'degrees_north'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_units_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_units_value(ds, sev))
+        return res
+
+    def check_vertices_latitude_missing_value_exists_v(self, ds):
+        """[V248] Check vertices_latitude.missing_value attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_missing_value_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_missing_value_exists(ds, sev))
+        return res
+
+    def check_vertices_latitude_missing_value_type_v(self, ds):
+        """[V249] Check vertices_latitude.missing_value attribute type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_missing_value_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_missing_value_type(ds, sev))
+        return res
+
+    def check_vertices_latitude_fillvalue_exists_v(self, ds):
+        """[V251] Check vertices_latitude._FillValue attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_fillvalue_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_fillvalue_exists(ds, sev))
+        return res
+
+    def check_vertices_latitude_fillvalue_type_v(self, ds):
+        """[V252] Check vertices_latitude._FillValue attribute type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_latitude_fillvalue_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_latitude_fillvalue_type(ds, sev))
+        return res
+
+    # ===========================================================================
+    # VERTICES_LONGITUDE ATTRIBUTE CHECKS
+    # ===========================================================================
+
+    def check_vertices_longitude_units_exists_v(self, ds):
+        """[V254] Check vertices_longitude.units attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_units_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_units_exists(ds, sev))
+        return res
+
+    def check_vertices_longitude_units_type_v(self, ds):
+        """[V255] Check vertices_longitude.units attribute type is NC_CHAR."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_units_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_units_type(ds, sev))
+        return res
+
+    def check_vertices_longitude_units_utf8_v(self, ds):
+        """[V256] Check vertices_longitude.units attribute is UTF-8 encoded."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_units_utf8")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_units_utf8(ds, sev))
+        return res
+
+    def check_vertices_longitude_units_value_v(self, ds):
+        """[V257] Check vertices_longitude.units attribute value equals 'degrees_east'."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_units_value")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_units_value(ds, sev))
+        return res
+
+    def check_vertices_longitude_missing_value_exists_v(self, ds):
+        """[V258] Check vertices_longitude.missing_value attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_missing_value_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_missing_value_exists(ds, sev))
+        return res
+
+    def check_vertices_longitude_missing_value_type_v(self, ds):
+        """[V259] Check vertices_longitude.missing_value attribute type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_missing_value_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_missing_value_type(ds, sev))
+        return res
+
+    def check_vertices_longitude_fillvalue_exists_v(self, ds):
+        """[V261] Check vertices_longitude._FillValue attribute exists."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_fillvalue_exists")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_fillvalue_exists(ds, sev))
+        return res
+
+    def check_vertices_longitude_fillvalue_type_v(self, ds):
+        """[V262] Check vertices_longitude._FillValue attribute type is NC_FLOAT."""
+        res = []
+        if not self.config or not self.config.variable_checks:
+            return res
+        check_config = self.config.variable_checks.get("check_vertices_longitude_fillvalue_type")
+        if check_config:
+            sev = self.get_severity(check_config.severity)
+            res.extend(check_vertices_longitude_fillvalue_type(ds, sev))
         return res

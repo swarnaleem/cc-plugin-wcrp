@@ -521,6 +521,482 @@ severity = "M"
 # V263: vertices_longitude _FillValue = 1.e+20
 severity = "M"
 
+# Variable existence checks
+[variable_checks.check_height_exists]
+# V001: height variable exists
+severity = "H"
+
+[variable_checks.check_lat_exists]
+# V030: lat variable exists
+severity = "H"
+
+[variable_checks.check_lat_bnds_exists]
+# V038: lat_bnds variable exists
+severity = "H"
+
+[variable_checks.check_lon_exists]
+# V068: lon variable exists
+severity = "H"
+
+[variable_checks.check_lon_bnds_exists]
+# V076: lon_bnds variable exists
+severity = "H"
+
+[variable_checks.check_i_exists]
+# V204: i variable exists
+severity = "H"
+
+[variable_checks.check_j_exists]
+# V211: j variable exists
+severity = "H"
+
+[variable_checks.check_vertices_latitude_exists]
+# V218: vertices_latitude variable exists
+severity = "H"
+
+[variable_checks.check_vertices_longitude_exists]
+# V223: vertices_longitude variable exists
+severity = "H"
+
+# Variable type checks
+[variable_checks.check_height_type]
+# V002: height type NC_DOUBLE
+severity = "H"
+
+[variable_checks.check_lat_type]
+# V031: lat type NC_FLOAT
+severity = "H"
+
+[variable_checks.check_lat_bnds_type]
+# V039: lat_bnds type NC_FLOAT
+severity = "H"
+
+[variable_checks.check_lon_type]
+# V069: lon type NC_FLOAT
+severity = "H"
+
+[variable_checks.check_lon_bnds_type]
+# V077: lon_bnds type NC_FLOAT
+severity = "H"
+
+[variable_checks.check_i_type]
+# V205: i type NC_INT
+severity = "H"
+
+[variable_checks.check_j_type]
+# V212: j type NC_INT
+severity = "H"
+
+[variable_checks.check_vertices_latitude_type]
+# V219: vertices_latitude type NC_FLOAT
+severity = "H"
+
+[variable_checks.check_vertices_longitude_type]
+# V224: vertices_longitude type NC_FLOAT
+severity = "H"
+
+# Variable shape checks
+[variable_checks.check_lat_shape]
+# V032: lat shape aligns with lat dimension
+severity = "H"
+
+[variable_checks.check_lat_bnds_shape]
+# V040: lat_bnds shape aligns with dimensions
+severity = "H"
+
+[variable_checks.check_lon_shape]
+# V070: lon shape aligns with lon dimension
+severity = "H"
+
+[variable_checks.check_lon_bnds_shape]
+# V078: lon_bnds shape aligns with dimensions
+severity = "H"
+
+[variable_checks.check_i_shape]
+# V206: i shape aligns with i dimension
+severity = "H"
+
+[variable_checks.check_j_shape]
+# V213: j shape aligns with j dimension
+severity = "H"
+
+[variable_checks.check_vertices_latitude_shape]
+# V220: vertices_latitude shape aligns with dimensions
+severity = "H"
+
+[variable_checks.check_vertices_longitude_shape]
+# V225: vertices_longitude shape aligns with dimensions
+severity = "H"
+
+# No NaN/Inf checks
+[variable_checks.check_lat_no_nan_inf]
+# V033: lat no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_lat_bnds_no_nan_inf]
+# V041: lat_bnds no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_lon_no_nan_inf]
+# V071: lon no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_lon_bnds_no_nan_inf]
+# V079: lon_bnds no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_i_no_nan_inf]
+# V207: i no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_j_no_nan_inf]
+# V214: j no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_vertices_latitude_no_nan_inf]
+# V221: vertices_latitude no missing, Inf, NaN values
+severity = "H"
+
+[variable_checks.check_vertices_longitude_no_nan_inf]
+# V226: vertices_longitude no missing, Inf, NaN values
+severity = "H"
+
+# Values within bounds checks
+[variable_checks.check_lat_within_bounds]
+# V037: lat values within lat_bnds range
+severity = "M"
+
+[variable_checks.check_lon_within_bounds]
+# V075: lon values within lon_bnds range
+severity = "M"
+
+# ==============================================================================
+# == Variable Attribute Checks
+# ==============================================================================
+
+# Height attribute checks
+[variable_checks.check_height_axis_exists]
+# V004: height.axis attribute exists
+severity = "M"
+
+[variable_checks.check_height_axis_type]
+# V005: height.axis attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_height_axis_utf8]
+# V006: height.axis attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_height_axis_value]
+# V007: height.axis attribute value equals 'Z'
+severity = "M"
+
+[variable_checks.check_height_standard_name_type]
+# V008: height.standard_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_height_standard_name_utf8]
+# V009: height.standard_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_height_standard_name_value]
+# V010: height.standard_name attribute value equals 'height'
+severity = "M"
+
+[variable_checks.check_height_long_name_exists]
+# V011: height.long_name attribute exists
+severity = "M"
+
+[variable_checks.check_height_long_name_type]
+# V012: height.long_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_height_long_name_utf8]
+# V013: height.long_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_height_long_name_value]
+# V014: height.long_name attribute value equals 'height'
+severity = "M"
+
+[variable_checks.check_height_units_type]
+# V015: height.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_height_units_utf8]
+# V016: height.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_height_positive_type]
+# V017: height.positive attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_height_positive_utf8]
+# V018: height.positive attribute is UTF-8 encoded
+severity = "L"
+
+# Lat attribute checks
+[variable_checks.check_lat_axis_type]
+# V046: lat.axis attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lat_axis_utf8]
+# V047: lat.axis attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lat_axis_value]
+# V048: lat.axis attribute value equals 'Y'
+severity = "M"
+
+[variable_checks.check_lat_standard_name_type]
+# V049: lat.standard_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lat_standard_name_utf8]
+# V050: lat.standard_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lat_long_name_exists]
+# V051: lat.long_name attribute exists
+severity = "M"
+
+[variable_checks.check_lat_long_name_type]
+# V052: lat.long_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lat_long_name_utf8]
+# V053: lat.long_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lat_long_name_value]
+# V054: lat.long_name attribute value equals 'latitude'
+severity = "M"
+
+[variable_checks.check_lat_units_type]
+# V055: lat.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lat_units_utf8]
+# V056: lat.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lat_bounds_exists]
+# V057: lat.bounds attribute exists
+severity = "M"
+
+[variable_checks.check_lat_bounds_type]
+# V058: lat.bounds attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lat_bounds_utf8]
+# V059: lat.bounds attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lat_actual_range_exists]
+# V060: lat.actual_range attribute exists
+severity = "L"
+
+[variable_checks.check_lat_actual_range_type]
+# V061: lat.actual_range attribute type is NC_FLOAT
+severity = "M"
+
+# Lon attribute checks
+[variable_checks.check_lon_axis_type]
+# V084: lon.axis attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lon_axis_utf8]
+# V085: lon.axis attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lon_axis_value]
+# V086: lon.axis attribute value equals 'X'
+severity = "M"
+
+[variable_checks.check_lon_standard_name_type]
+# V087: lon.standard_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lon_standard_name_utf8]
+# V088: lon.standard_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lon_long_name_exists]
+# V089: lon.long_name attribute exists
+severity = "M"
+
+[variable_checks.check_lon_long_name_type]
+# V090: lon.long_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lon_long_name_utf8]
+# V091: lon.long_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lon_long_name_value]
+# V092: lon.long_name attribute value equals 'longitude'
+severity = "M"
+
+[variable_checks.check_lon_units_type]
+# V093: lon.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lon_units_utf8]
+# V094: lon.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lon_bounds_exists]
+# V095: lon.bounds attribute exists
+severity = "M"
+
+[variable_checks.check_lon_bounds_type]
+# V096: lon.bounds attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_lon_bounds_utf8]
+# V097: lon.bounds attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_lon_actual_range_exists]
+# V098: lon.actual_range attribute exists
+severity = "L"
+
+[variable_checks.check_lon_actual_range_type]
+# V099: lon.actual_range attribute type is NC_FLOAT
+severity = "M"
+
+# i variable attribute checks
+[variable_checks.check_i_units_exists]
+# V230: i.units attribute exists
+severity = "M"
+
+[variable_checks.check_i_units_type]
+# V231: i.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_i_units_utf8]
+# V232: i.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_i_units_value]
+# V233: i.units attribute value equals '1'
+severity = "M"
+
+[variable_checks.check_i_long_name_exists]
+# V234: i.long_name attribute exists
+severity = "M"
+
+[variable_checks.check_i_long_name_type]
+# V235: i.long_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_i_long_name_utf8]
+# V236: i.long_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_i_long_name_value]
+# V237: i.long_name attribute value equals 'cell index along first dimension'
+severity = "M"
+
+# j variable attribute checks
+[variable_checks.check_j_units_exists]
+# V240: j.units attribute exists
+severity = "M"
+
+[variable_checks.check_j_units_type]
+# V241: j.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_j_units_utf8]
+# V242: j.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_j_units_value]
+# V243: j.units attribute value equals '1'
+severity = "M"
+
+[variable_checks.check_j_long_name_exists]
+# V244: j.long_name attribute exists
+severity = "M"
+
+[variable_checks.check_j_long_name_type]
+# V245: j.long_name attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_j_long_name_utf8]
+# V246: j.long_name attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_j_long_name_value]
+# V247: j.long_name attribute value equals 'cell index along second dimension'
+severity = "M"
+
+# vertices_latitude attribute checks
+[variable_checks.check_vertices_latitude_units_exists]
+# V248: vertices_latitude.units attribute exists
+severity = "M"
+
+[variable_checks.check_vertices_latitude_units_type]
+# V249: vertices_latitude.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_vertices_latitude_units_utf8]
+# V251: vertices_latitude.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_vertices_latitude_units_value]
+# V252: vertices_latitude.units attribute value equals 'degrees_north'
+severity = "M"
+
+[variable_checks.check_vertices_latitude_missing_value_exists]
+# V254: vertices_latitude.missing_value attribute exists
+severity = "M"
+
+[variable_checks.check_vertices_latitude_missing_value_type]
+# V255: vertices_latitude.missing_value attribute type is NC_FLOAT
+severity = "M"
+
+[variable_checks.check_vertices_latitude_fillvalue_exists]
+# V256: vertices_latitude._FillValue attribute exists
+severity = "M"
+
+[variable_checks.check_vertices_latitude_fillvalue_type]
+# V257: vertices_latitude._FillValue attribute type is NC_FLOAT
+severity = "M"
+
+# vertices_longitude attribute checks
+[variable_checks.check_vertices_longitude_units_exists]
+# V258: vertices_longitude.units attribute exists
+severity = "M"
+
+[variable_checks.check_vertices_longitude_units_type]
+# V259: vertices_longitude.units attribute type is NC_CHAR
+severity = "M"
+
+[variable_checks.check_vertices_longitude_units_utf8]
+# V261: vertices_longitude.units attribute is UTF-8 encoded
+severity = "L"
+
+[variable_checks.check_vertices_longitude_units_value]
+# V262: vertices_longitude.units attribute value equals 'degrees_east'
+severity = "M"
+
+[variable_checks.check_vertices_longitude_missing_value_exists]
+# V264: vertices_longitude.missing_value attribute exists
+severity = "M"
+
+[variable_checks.check_vertices_longitude_missing_value_type]
+# V265: vertices_longitude.missing_value attribute type is NC_FLOAT
+severity = "M"
+
+[variable_checks.check_vertices_longitude_fillvalue_exists]
+# V266: vertices_longitude._FillValue attribute exists
+severity = "M"
+
+[variable_checks.check_vertices_longitude_fillvalue_type]
+# V267: vertices_longitude._FillValue attribute type is NC_FLOAT
+severity = "M"
+
 [coordinates.time.squareness]
 # Check TIME001
 severity = "H"

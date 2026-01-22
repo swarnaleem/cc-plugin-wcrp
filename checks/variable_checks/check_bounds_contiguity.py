@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-atomic checks that verify whether bounds intervals
+This module provides atomic checks that verify whether bounds intervals
 are contiguous (no gaps or overlaps between adjacent intervals).
 """
 
