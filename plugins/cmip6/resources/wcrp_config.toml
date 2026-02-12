@@ -424,7 +424,7 @@ severity = "M"
 severity = "L"
 
 # ==============================================================================
-# == Coordinates checks
+# == Coordinates checks (legacy)
 # ============================================================================
 [coordinates.auxiliary]
 severity = "H"
@@ -436,239 +436,631 @@ severity = "H"
 severity = "H"
 
 # ==============================================================================
-# == Variable Value Checks
+# == COORDINATE CHECKS - GROUPED BY GRID TYPE
+# ==============================================================================
+# This section organizes coordinate checks by:
+#   - horizontal.regular:     lat/lon grids (1D coordinates)
+#   - horizontal.curvilinear: i/j grids (2D coordinates with vertices)
+#   - horizontal.rotated:     rlat/rlon grids (rotated pole)
+#   - vertical:               height, plev, depth
+#
+# Each coordinate variable can have checks for:
+#   existence, type, shape, no_nan_inf, value_range, bounds_monotonicity,
+#   bounds_contiguity, within_bounds, strictly_positive, axis, units, etc.
 # ==============================================================================
 
-# Value range checks
+# ------------------------------------------------------------------------------
+# HORIZONTAL COORDINATES - Regular Grid (lat/lon)
+# ------------------------------------------------------------------------------
+[coordinate_checks.horizontal.regular]
+enabled = true
+
+[coordinate_checks.horizontal.regular.lat]
+enabled = true
+[coordinate_checks.horizontal.regular.lat.existence]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat.type]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat.shape]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat.value_range]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat.axis]
+severity = "M"
+[coordinate_checks.horizontal.regular.lat.units]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat.standard_name]
+severity = "M"
+
+[coordinate_checks.horizontal.regular.lon]
+enabled = true
+[coordinate_checks.horizontal.regular.lon.existence]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon.type]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon.shape]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon.value_range]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon.axis]
+severity = "M"
+[coordinate_checks.horizontal.regular.lon.units]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon.standard_name]
+severity = "M"
+
+[coordinate_checks.horizontal.regular.lat_bnds]
+enabled = true
+[coordinate_checks.horizontal.regular.lat_bnds.existence]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat_bnds.type]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat_bnds.shape]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat_bnds.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat_bnds.value_range]
+severity = "H"
+[coordinate_checks.horizontal.regular.lat_bnds.bounds_monotonicity]
+severity = "M"
+[coordinate_checks.horizontal.regular.lat_bnds.bounds_contiguity]
+severity = "M"
+
+[coordinate_checks.horizontal.regular.lon_bnds]
+enabled = true
+[coordinate_checks.horizontal.regular.lon_bnds.existence]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon_bnds.type]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon_bnds.shape]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon_bnds.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon_bnds.value_range]
+severity = "H"
+[coordinate_checks.horizontal.regular.lon_bnds.bounds_monotonicity]
+severity = "M"
+[coordinate_checks.horizontal.regular.lon_bnds.bounds_contiguity]
+severity = "M"
+
+# ------------------------------------------------------------------------------
+# HORIZONTAL COORDINATES - Curvilinear Grid (i/j with vertices)
+# ------------------------------------------------------------------------------
+[coordinate_checks.horizontal.curvilinear]
+enabled = true
+
+[coordinate_checks.horizontal.curvilinear.i]
+enabled = true
+[coordinate_checks.horizontal.curvilinear.i.existence]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.i.type]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.i.shape]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.i.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.i.strictly_positive]
+severity = "H"
+
+[coordinate_checks.horizontal.curvilinear.j]
+enabled = true
+[coordinate_checks.horizontal.curvilinear.j.existence]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.j.type]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.j.shape]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.j.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.j.strictly_positive]
+severity = "H"
+
+[coordinate_checks.horizontal.curvilinear.vertices_latitude]
+enabled = true
+[coordinate_checks.horizontal.curvilinear.vertices_latitude.existence]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_latitude.type]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_latitude.shape]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_latitude.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_latitude.value_range]
+severity = "H"
+
+[coordinate_checks.horizontal.curvilinear.vertices_longitude]
+enabled = true
+[coordinate_checks.horizontal.curvilinear.vertices_longitude.existence]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_longitude.type]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_longitude.shape]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_longitude.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.curvilinear.vertices_longitude.value_range]
+severity = "H"
+
+# ------------------------------------------------------------------------------
+# HORIZONTAL COORDINATES - Rotated Pole Grid (rlat/rlon)
+# ------------------------------------------------------------------------------
+[coordinate_checks.horizontal.rotated]
+enabled = true
+
+[coordinate_checks.horizontal.rotated.rlat]
+enabled = true
+[coordinate_checks.horizontal.rotated.rlat.existence]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat.type]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat.shape]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat.value_range]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat.axis]
+severity = "M"
+[coordinate_checks.horizontal.rotated.rlat.units]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat.standard_name]
+severity = "M"
+
+[coordinate_checks.horizontal.rotated.rlon]
+enabled = true
+[coordinate_checks.horizontal.rotated.rlon.existence]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon.type]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon.shape]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon.no_nan_inf]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon.value_range]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon.axis]
+severity = "M"
+[coordinate_checks.horizontal.rotated.rlon.units]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon.standard_name]
+severity = "M"
+
+[coordinate_checks.horizontal.rotated.rlat_bnds]
+enabled = true
+[coordinate_checks.horizontal.rotated.rlat_bnds.existence]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat_bnds.type]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat_bnds.shape]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlat_bnds.no_nan_inf]
+severity = "H"
+
+[coordinate_checks.horizontal.rotated.rlon_bnds]
+enabled = true
+[coordinate_checks.horizontal.rotated.rlon_bnds.existence]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon_bnds.type]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon_bnds.shape]
+severity = "H"
+[coordinate_checks.horizontal.rotated.rlon_bnds.no_nan_inf]
+severity = "H"
+
+# ------------------------------------------------------------------------------
+# VERTICAL COORDINATES
+# ------------------------------------------------------------------------------
+[coordinate_checks.vertical]
+enabled = true
+
+[coordinate_checks.vertical.height]
+enabled = true
+[coordinate_checks.vertical.height.existence]
+severity = "H"
+[coordinate_checks.vertical.height.type]
+severity = "H"
+[coordinate_checks.vertical.height.strictly_positive]
+severity = "H"
+[coordinate_checks.vertical.height.axis]
+severity = "M"
+[coordinate_checks.vertical.height.units]
+severity = "H"
+[coordinate_checks.vertical.height.standard_name]
+severity = "M"
+
+# ==============================================================================
+# == Variable Value Checks (legacy flat structure - kept for backward compatibility)
+# ==============================================================================
+
+# ==============================================================================
+# == Value Range Checks (with grid type metadata)
+# ==============================================================================
+
+# --- Regular Grid ---
 [variable_checks.check_lat_value_range]
 # V036: lat values within -90 to 90
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lon_value_range]
 # V074: lon values within 0 to 360
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon"
 
 [variable_checks.check_lat_bnds_value_range]
 # V044: lat_bnds values within -90 to 90
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_bnds_value_range]
 # V082: lon_bnds values within 0 to 360
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
+# --- Curvilinear Grid ---
 [variable_checks.check_vertices_latitude_value_range]
 # V222: vertices_latitude values within -90 to 90
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_longitude_value_range]
 # V227: vertices_longitude values within 0 to 360
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
-# Strictly positive checks
+# ==============================================================================
+# == Strictly Positive Checks (with grid type metadata)
+# ==============================================================================
+
 [variable_checks.check_height_strictly_positive]
 # V003: height values strictly positive
 severity = "H"
+grid_type = ["regular", "curvilinear", "rotated"]
+coord_variable = "height"
 
 [variable_checks.check_i_strictly_positive]
 # V208: i values strictly positive
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "i"
 
 [variable_checks.check_j_strictly_positive]
 # V215: j values strictly positive
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "j"
 
-# Bounds monotonicity checks
+# ==============================================================================
+# == Bounds Monotonicity Checks (with grid type metadata)
+# ==============================================================================
+
 [variable_checks.check_lat_bnds_monotonicity]
 # V042: lat_bnds monotonically non-decreasing
 severity = "M"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_bnds_monotonicity]
 # V080: lon_bnds monotonically non-decreasing
 severity = "M"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
-# Bounds contiguity checks
+# ==============================================================================
+# == Bounds Contiguity Checks (with grid type metadata)
+# ==============================================================================
+
 [variable_checks.check_lat_bnds_contiguity]
 # V043: lat_bnds no gaps or overlaps
 severity = "M"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_bnds_contiguity]
 # V081: lon_bnds no gaps or overlaps
 severity = "M"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
-# Data within actual_range checks
+# ==============================================================================
+# == Data Within actual_range Checks (with grid type metadata)
+# ==============================================================================
+
 [variable_checks.check_lat_data_within_actual_range]
 # V067: lat data within actual_range attribute
 severity = "L"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lon_data_within_actual_range]
 # V105: lon data within actual_range attribute
 severity = "L"
+grid_type = ["regular"]
+coord_variable = "lon"
 
-# Fill value checks
+# ==============================================================================
+# == Fill Value Checks (with grid type metadata)
+# ==============================================================================
+
 [variable_checks.check_vertices_latitude_missing_value]
 # V250: vertices_latitude missing_value = 1.e+20
 severity = "M"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_latitude_fill_value]
 # V253: vertices_latitude _FillValue = 1.e+20
 severity = "M"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_longitude_missing_value]
 # V260: vertices_longitude missing_value = 1.e+20
 severity = "M"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
 [variable_checks.check_vertices_longitude_fill_value]
 # V263: vertices_longitude _FillValue = 1.e+20
 severity = "M"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
-# Variable existence checks
+# ==============================================================================
+# == Variable Existence Checks (with grid type metadata)
+# ==============================================================================
+
+# --- Vertical Coordinates (all grid types) ---
 [variable_checks.check_height_exists]
 # V001: height variable exists
 severity = "H"
+grid_type = ["regular", "curvilinear", "rotated"]
+coord_variable = "height"
 
+# --- Horizontal Coordinates: Regular Grid (lat/lon) ---
 [variable_checks.check_lat_exists]
 # V030: lat variable exists
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lat_bnds_exists]
 # V038: lat_bnds variable exists
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_exists]
 # V068: lon variable exists
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon"
 
 [variable_checks.check_lon_bnds_exists]
 # V076: lon_bnds variable exists
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
+# --- Horizontal Coordinates: Curvilinear Grid (i/j with vertices) ---
 [variable_checks.check_i_exists]
 # V204: i variable exists
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "i"
 
 [variable_checks.check_j_exists]
 # V211: j variable exists
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "j"
 
 [variable_checks.check_vertices_latitude_exists]
 # V218: vertices_latitude variable exists
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_longitude_exists]
 # V223: vertices_longitude variable exists
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
-# Variable type checks
+# ==============================================================================
+# == Variable Type Checks (with grid type metadata)
+# ==============================================================================
+
+# --- Vertical Coordinates ---
 [variable_checks.check_height_type]
 # V002: height type NC_DOUBLE
 severity = "H"
+grid_type = ["regular", "curvilinear", "rotated"]
+coord_variable = "height"
 
+# --- Horizontal Coordinates: Regular Grid ---
 [variable_checks.check_lat_type]
 # V031: lat type NC_FLOAT
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lat_bnds_type]
 # V039: lat_bnds type NC_FLOAT
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_type]
 # V069: lon type NC_FLOAT
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon"
 
 [variable_checks.check_lon_bnds_type]
 # V077: lon_bnds type NC_FLOAT
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
+# --- Horizontal Coordinates: Curvilinear Grid ---
 [variable_checks.check_i_type]
 # V205: i type NC_INT
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "i"
 
 [variable_checks.check_j_type]
 # V212: j type NC_INT
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "j"
 
 [variable_checks.check_vertices_latitude_type]
 # V219: vertices_latitude type NC_FLOAT
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_longitude_type]
 # V224: vertices_longitude type NC_FLOAT
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
-# Variable shape checks
+# ==============================================================================
+# == Variable Shape Checks (with grid type metadata)
+# ==============================================================================
+
+# --- Regular Grid ---
 [variable_checks.check_lat_shape]
 # V032: lat shape aligns with lat dimension
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lat_bnds_shape]
 # V040: lat_bnds shape aligns with dimensions
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_shape]
 # V070: lon shape aligns with lon dimension
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon"
 
 [variable_checks.check_lon_bnds_shape]
 # V078: lon_bnds shape aligns with dimensions
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
+# --- Curvilinear Grid ---
 [variable_checks.check_i_shape]
 # V206: i shape aligns with i dimension
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "i"
 
 [variable_checks.check_j_shape]
 # V213: j shape aligns with j dimension
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "j"
 
 [variable_checks.check_vertices_latitude_shape]
 # V220: vertices_latitude shape aligns with dimensions
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_longitude_shape]
 # V225: vertices_longitude shape aligns with dimensions
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
-# No NaN/Inf checks
+# ==============================================================================
+# == No NaN/Inf Checks (with grid type metadata)
+# ==============================================================================
+
+# --- Regular Grid ---
 [variable_checks.check_lat_no_nan_inf]
 # V033: lat no missing, Inf, NaN values
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lat_bnds_no_nan_inf]
 # V041: lat_bnds no missing, Inf, NaN values
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lat_bnds"
 
 [variable_checks.check_lon_no_nan_inf]
 # V071: lon no missing, Inf, NaN values
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon"
 
 [variable_checks.check_lon_bnds_no_nan_inf]
 # V079: lon_bnds no missing, Inf, NaN values
 severity = "H"
+grid_type = ["regular"]
+coord_variable = "lon_bnds"
 
+# --- Curvilinear Grid ---
 [variable_checks.check_i_no_nan_inf]
 # V207: i no missing, Inf, NaN values
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "i"
 
 [variable_checks.check_j_no_nan_inf]
 # V214: j no missing, Inf, NaN values
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "j"
 
 [variable_checks.check_vertices_latitude_no_nan_inf]
 # V221: vertices_latitude no missing, Inf, NaN values
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_latitude"
 
 [variable_checks.check_vertices_longitude_no_nan_inf]
 # V226: vertices_longitude no missing, Inf, NaN values
 severity = "H"
+grid_type = ["curvilinear"]
+coord_variable = "vertices_longitude"
 
-# Values within bounds checks
+# ==============================================================================
+# == Values Within Bounds Checks (with grid type metadata)
+# ==============================================================================
+
 [variable_checks.check_lat_within_bounds]
 # V037: lat values within lat_bnds range
 severity = "M"
+grid_type = ["regular"]
+coord_variable = "lat"
 
 [variable_checks.check_lon_within_bounds]
 # V075: lon values within lon_bnds range
 severity = "M"
+grid_type = ["regular"]
+coord_variable = "lon"
 
 # ==============================================================================
 # == Variable Attribute Checks
@@ -869,133 +1261,165 @@ severity = "M"
 [variable_checks.check_i_units_exists]
 # V230: i.units attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_units_type]
 # V231: i.units attribute type is NC_CHAR
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_units_utf8]
 # V232: i.units attribute is UTF-8 encoded
 severity = "L"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_units_value]
 # V233: i.units attribute value equals '1'
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_long_name_exists]
 # V234: i.long_name attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_long_name_type]
 # V235: i.long_name attribute type is NC_CHAR
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_long_name_utf8]
 # V236: i.long_name attribute is UTF-8 encoded
 severity = "L"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_i_long_name_value]
 # V237: i.long_name attribute value equals 'cell index along first dimension'
 severity = "M"
+grid_type = ["curvilinear"]
 
 # j variable attribute checks
 [variable_checks.check_j_units_exists]
 # V240: j.units attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_units_type]
 # V241: j.units attribute type is NC_CHAR
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_units_utf8]
 # V242: j.units attribute is UTF-8 encoded
 severity = "L"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_units_value]
 # V243: j.units attribute value equals '1'
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_long_name_exists]
 # V244: j.long_name attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_long_name_type]
 # V245: j.long_name attribute type is NC_CHAR
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_long_name_utf8]
 # V246: j.long_name attribute is UTF-8 encoded
 severity = "L"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_j_long_name_value]
 # V247: j.long_name attribute value equals 'cell index along second dimension'
 severity = "M"
+grid_type = ["curvilinear"]
 
 # vertices_latitude attribute checks
 [variable_checks.check_vertices_latitude_units_exists]
 # V248: vertices_latitude.units attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_units_type]
 # V249: vertices_latitude.units attribute type is NC_CHAR
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_units_utf8]
 # V251: vertices_latitude.units attribute is UTF-8 encoded
 severity = "L"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_units_value]
 # V252: vertices_latitude.units attribute value equals 'degrees_north'
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_missing_value_exists]
 # V254: vertices_latitude.missing_value attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_missing_value_type]
 # V255: vertices_latitude.missing_value attribute type is NC_FLOAT
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_fillvalue_exists]
 # V256: vertices_latitude._FillValue attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_latitude_fillvalue_type]
 # V257: vertices_latitude._FillValue attribute type is NC_FLOAT
 severity = "M"
+grid_type = ["curvilinear"]
 
 # vertices_longitude attribute checks
 [variable_checks.check_vertices_longitude_units_exists]
 # V258: vertices_longitude.units attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_units_type]
 # V259: vertices_longitude.units attribute type is NC_CHAR
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_units_utf8]
 # V261: vertices_longitude.units attribute is UTF-8 encoded
 severity = "L"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_units_value]
 # V262: vertices_longitude.units attribute value equals 'degrees_east'
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_missing_value_exists]
 # V264: vertices_longitude.missing_value attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_missing_value_type]
 # V265: vertices_longitude.missing_value attribute type is NC_FLOAT
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_fillvalue_exists]
 # V266: vertices_longitude._FillValue attribute exists
 severity = "M"
+grid_type = ["curvilinear"]
 
 [variable_checks.check_vertices_longitude_fillvalue_type]
 # V267: vertices_longitude._FillValue attribute type is NC_FLOAT
 severity = "M"
+grid_type = ["curvilinear"]
 
 [coordinates.time.squareness]
 # Check TIME001
