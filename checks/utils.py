@@ -1,6 +1,8 @@
+import json
 import os
 import re
 from datetime import timedelta
+from pathlib import Path
 
 import numpy as np
 from compliance_checker.base import BaseCheck
@@ -328,6 +330,7 @@ def _compare_CV(CheckerObject, dic2comp, errmsg_prefix):
                                 )
     return checked, messages
 
+
 # === Variable data utilities ===
 
 
@@ -377,6 +380,7 @@ def get_bounds_data(ds, bnds_var_name):
         return None, f"Bounds variable '{bnds_var_name}' has unexpected shape {bnds.shape}. Expected (n, 2) for interval bounds."
 
     return bnds, None
+
 
 # === Further utils ===
 
@@ -466,3 +470,58 @@ def _get_drs_facets(filepath, project_id, dir_template_keys, filename_template_k
 
     except Exception as e:
         return None, None, f"An unexpected error occurred during DRS parsing: {e}"
+
+
+# === CMOR Coordinate Definitions ===
+
+_cmor_cache = None
+
+
+def get_cmor_coordinate_definitions():
+    """Load CMOR coordinate definitions from bundled JSON file."""
+    global _cmor_cache
+    if _cmor_cache is not None:
+        return _cmor_cache
+
+    cmor_file = Path(__file__).parent.parent / "plugins" / "cmip6" / "resources" / "CMIP7_coordinate.json"
+    try:
+        with open(cmor_file, "r") as f:
+            data = json.load(f)
+            _cmor_cache = data.get("axis_entry", data)
+            return _cmor_cache
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"[WARNING] Failed to load CMOR definitions from {cmor_file}: {e}")
+        return {}
+
+
+def get_cmor_coordinate_info(out_name):
+    """Get CMOR metadata for a coordinate variable."""
+    coords = get_cmor_coordinate_definitions()
+    for coord_def in coords.values():
+        if coord_def.get("out_name") == out_name:
+            return {
+                "standard_name": coord_def.get("standard_name", ""),
+                "units": coord_def.get("units", ""),
+                "axis": coord_def.get("axis", ""),
+                "valid_min": coord_def.get("valid_min", ""),
+                "valid_max": coord_def.get("valid_max", ""),
+                "long_name": coord_def.get("long_name", ""),
+                "must_have_bounds": coord_def.get("must_have_bounds", "") == "yes",
+            }
+    return {}
+
+
+# Grid type -> required CMOR coordinates (by out_name)
+GRID_TYPE_COORDS = {
+    "rotated": {"rlat", "rlon"},      # gridlatitude, gridlongitude
+    "curvilinear": {"i", "j"},        # i_index, j_index
+    "regular": {"lat", "lon"},        # latitude, longitude
+}
+
+
+def detect_grid_type_from_cmor(file_variables):
+    """Detect grid type based on CMOR-defined coordinates present in file."""
+    for grid_type, required in GRID_TYPE_COORDS.items():
+        if required.issubset(file_variables):
+            return grid_type
+    return None
