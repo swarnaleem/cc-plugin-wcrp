@@ -100,7 +100,7 @@ from checks.coordinate_checks.check_fill_value_equals import (
     check_vertices_latitude_missing_value, check_vertices_latitude_fill_value,
     check_vertices_longitude_missing_value, check_vertices_longitude_fill_value,
 )
-from checks.utils import detect_grid_type_from_cmor, get_cmor_coordinate_info
+from checks.utils import detect_grid_type, get_cmor_coordinate_info
 from checks.coordinate_checks.check_var_attributes import (
     # Height
     check_height_axis_exists, check_height_axis_type, check_height_axis_utf8, check_height_axis_value,
@@ -467,12 +467,14 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
 
     def _detect_grid_type(self, ds, severity) -> Tuple[Optional[str], Dict[str, bool], List[Any]]:
         """
-        Detect grid type using CMOR coordinate definitions.
+        Detect grid type using operation-based inspection.
 
-        Uses CMOR-defined coordinate names to determine grid type:
-        - Regular: lat, lon (CMOR: latitude, longitude)
-        - Rotated: rlat, rlon (CMOR: gridlatitude, gridlongitude)
-        - Curvilinear: i, j (CMOR: i_index, j_index) or 2D lat/lon
+        Uses standard_name attributes and coordinate dimensionality:
+        - Regular: 1-D lat/lon with standard_name latitude/longitude
+        - Rotated: 1-D lat/lon with standard_name grid_latitude/grid_longitude
+                   (i.e. rectangular + rlat/rlon present)
+        - Curvilinear: 2-D lat/lon coordinates
+        - Unstructured: cf_role='mesh_topology' present
         """
         if self._grid_type_cache is not None:
             return self._grid_type_cache, self._detected_coords_cache, []
@@ -480,7 +482,7 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
         results = []
         variables = set(ds.variables.keys())
 
-        # Track which coordinates are present
+        # Track which coordinates are present (used by downstream checks)
         detected = {
             "lat": "lat" in variables, "lon": "lon" in variables,
             "lat_bnds": "lat_bnds" in variables, "lon_bnds": "lon_bnds" in variables,
@@ -491,25 +493,37 @@ class Cmip6ProjectCheck(WCRPBaseCheck):
             "height": "height" in variables,
         }
 
-        # Use CMOR-based detection
-        grid_type = detect_grid_type_from_cmor(variables)
+        # Use operation-based detection
+        detection = detect_grid_type(self.xrds, ds)
 
-        # Fallback: check for 2D lat/lon (curvilinear without i/j)
-        if grid_type is None and detected["lat"]:
-            lat_is_2d = len(ds.variables["lat"].dimensions) == 2
-            if lat_is_2d or detected["vertices_latitude"]:
-                grid_type = "curvilinear"
+        # Map generic result to CMIP6-specific grid type
+        grid_type = None
+        if detection.grid_type == "rectangular":
+            # Distinguish regular vs rotated: rotated has rlat/rlon
+            if detected["rlat"] and detected["rlon"]:
+                grid_type = "rotated"
+            else:
+                grid_type = "regular"
+        elif detection.grid_type == "curvilinear":
+            grid_type = "curvilinear"
+        elif detection.grid_type == "unstructured":
+            grid_type = "unstructured"
 
         if grid_type is None:
-            ctx = TestCtx(severity, "[GRID001] Grid Type Detection")
-            ctx.add_failure(
-                f"Cannot determine grid type from CMOR coordinates. "
-                f"lat={detected['lat']}, lon={detected['lon']}, "
-                f"i={detected['i']}, j={detected['j']}, rlat={detected['rlat']}"
-            )
-            results.append(ctx.to_result())
+            if detection.lat_var is not None or detection.lon_var is not None:
+                # Found some coordinates but couldn't classify — worth warning about
+                ctx = TestCtx(severity, "[GRID001] Grid Type Detection")
+                ctx.add_failure(
+                    f"Cannot determine grid type. {detection.method}"
+                )
+                results.append(ctx.to_result())
+            else:
+                # No horizontal coordinates found — file may be a zonal mean,
+                # timeseries, etc. Grid-gated checks will simply be skipped.
+                print(f"[INFO] No horizontal grid detected — skipping grid-specific checks. "
+                      f"({detection.method})")
         else:
-            print(f"[INFO] Detected grid type: {grid_type} (using CMOR coordinate definitions)")
+            print(f"[INFO] Detected grid type: {grid_type} ({detection.method})")
 
         self._grid_type_cache = grid_type
         self._detected_coords_cache = detected

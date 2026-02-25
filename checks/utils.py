@@ -3,6 +3,7 @@ import os
 import re
 from datetime import timedelta
 from pathlib import Path
+from typing import NamedTuple, Optional
 
 import numpy as np
 from compliance_checker.base import BaseCheck
@@ -511,17 +512,129 @@ def get_cmor_coordinate_info(out_name):
     return {}
 
 
-# Grid type -> required CMOR coordinates (by out_name)
-GRID_TYPE_COORDS = {
-    "rotated": {"rlat", "rlon"},      # gridlatitude, gridlongitude
-    "curvilinear": {"i", "j"},        # i_index, j_index
-    "regular": {"lat", "lon"},        # latitude, longitude
-}
+# ---------------------------------------------------------------------------
+# Operation-based grid type detection
+# ---------------------------------------------------------------------------
+
+_LAT_STANDARD_NAMES = ("latitude", "grid_latitude")
+_LON_STANDARD_NAMES = ("longitude", "grid_longitude")
+
+# Name-based fallback when standard_name is absent
+_LAT_FALLBACK_NAMES = ("lat", "latitude", "rlat", "y")
+_LON_FALLBACK_NAMES = ("lon", "longitude", "rlon", "x")
 
 
-def detect_grid_type_from_cmor(file_variables):
-    """Detect grid type based on CMOR-defined coordinates present in file."""
-    for grid_type, required in GRID_TYPE_COORDS.items():
-        if required.issubset(file_variables):
-            return grid_type
+class GridDetectionResult(NamedTuple):
+    grid_type: Optional[str]   # "rectangular" | "curvilinear" | "unstructured" | None
+    lat_var: Optional[str]     # name of the latitude coordinate found
+    lon_var: Optional[str]     # name of the longitude coordinate found
+    method: str                # human-readable detection rationale
+
+
+def detect_grid_type(xrds, ncds) -> GridDetectionResult:
+    """Detect grid type by inspecting data structure.
+
+    Algorithm
+    ---------
+    1. UGRID: any variable with ``cf_role == "mesh_topology"`` → **unstructured**
+    2. Find lat/lon coordinates by ``standard_name`` (via *cf_xarray*,
+       falling back to a manual scan of the netCDF4 dataset).
+    3. Dimensionality:
+       - both 1-D → **rectangular**
+       - both 2-D → **curvilinear**
+       - otherwise → ``None`` (unknown)
+
+    Parameters
+    ----------
+    xrds : xarray.Dataset
+        Dataset opened with ``decode_coords=True`` (cf_xarray enabled).
+    ncds : netCDF4.Dataset
+        The same file opened via netCDF4 (used as fallback).
+
+    Returns
+    -------
+    GridDetectionResult
+    """
+
+    # ---- 1. UGRID mesh topology check ----
+    for var in ncds.variables.values():
+        if getattr(var, "cf_role", None) == "mesh_topology":
+            return GridDetectionResult("unstructured", None, None,
+                                       "cf_role='mesh_topology' found")
+
+    # ---- 2. Find lat/lon by standard_name ----
+    lat_name = _find_coord_by_standard_name(xrds, ncds, _LAT_STANDARD_NAMES)
+    lon_name = _find_coord_by_standard_name(xrds, ncds, _LON_STANDARD_NAMES)
+
+    # ---- 2b. Name-based fallback if standard_name lookup failed ----
+    method_note = ""
+    if lat_name is None:
+        lat_name = _find_coord_by_name(ncds, _LAT_FALLBACK_NAMES)
+        if lat_name is not None:
+            method_note = "lat via name fallback"
+    if lon_name is None:
+        lon_name = _find_coord_by_name(ncds, _LON_FALLBACK_NAMES)
+        if lon_name is not None:
+            method_note = (method_note + ", " if method_note else "") + "lon via name fallback"
+
+    if lat_name is None or lon_name is None:
+        return GridDetectionResult(None, lat_name, lon_name,
+                                   "Could not locate both lat and lon by standard_name or variable name")
+
+    # ---- 3. Dimensionality check ----
+    lat_ndim = _get_ndim(xrds, ncds, lat_name)
+    lon_ndim = _get_ndim(xrds, ncds, lon_name)
+
+    suffix = f" ({method_note})" if method_note else ""
+
+    if lat_ndim == 1 and lon_ndim == 1:
+        return GridDetectionResult("rectangular", lat_name, lon_name,
+                                   f"1-D coordinates: {lat_name}(1D), {lon_name}(1D){suffix}")
+
+    if lat_ndim == 2 and lon_ndim == 2:
+        return GridDetectionResult("curvilinear", lat_name, lon_name,
+                                   f"2-D coordinates: {lat_name}(2D), {lon_name}(2D){suffix}")
+
+    return GridDetectionResult(None, lat_name, lon_name,
+                               f"Mixed dimensions: {lat_name}({lat_ndim}D), {lon_name}({lon_ndim}D){suffix}")
+
+
+# --- internal helpers -------------------------------------------------------
+
+def _find_coord_by_standard_name(xrds, ncds, standard_names):
+    """Return the variable name matching one of *standard_names*, or None."""
+    # Try cf_xarray first (fast, attribute-aware)
+    try:
+        sn_map = xrds.cf.standard_names
+        for sn in standard_names:
+            if sn in sn_map:
+                names = sn_map[sn]
+                if names:
+                    return names[0]  # first match
+    except Exception:
+        pass
+
+    # Fallback: iterate netCDF4 variables
+    for vname, var in ncds.variables.items():
+        sn = getattr(var, "standard_name", None)
+        if sn in standard_names:
+            return vname
+
     return None
+
+
+def _find_coord_by_name(ncds, candidate_names):
+    """Return the first variable name from *candidate_names* present in the file, or None."""
+    for name in candidate_names:
+        if name in ncds.variables:
+            return name
+    return None
+
+
+def _get_ndim(xrds, ncds, var_name):
+    """Return the number of dimensions of *var_name*."""
+    if var_name in xrds:
+        return xrds[var_name].ndim
+    if var_name in ncds.variables:
+        return ncds.variables[var_name].ndim
+    return 0
